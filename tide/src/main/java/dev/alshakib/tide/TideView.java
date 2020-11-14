@@ -423,6 +423,11 @@ public class TideView extends View {
 
     private void updateProgress(MotionEvent event) {
         tideProgress = (int) (max * event.getX() / getAvailableWidth());
+        if (tideProgress < 0) {
+            tideProgress = 0;
+        } else if (tideProgress > max) {
+            tideProgress = max;
+        }
         invalidate();
         if (onTideProgressChangeListener != null) {
             onTideProgressChangeListener.onTideProgressChange(this, tideProgress, true);
