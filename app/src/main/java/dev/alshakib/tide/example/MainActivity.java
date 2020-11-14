@@ -28,8 +28,12 @@ package dev.alshakib.tide.example;
 
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.Random;
+
+import dev.alshakib.tide.TideView;
 import dev.alshakib.tide.example.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
@@ -41,5 +45,22 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         viewBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(viewBinding.getRoot());
+
+        viewBinding.tideView.setAmplitudeData(getDummyWaveSample());
+
+        viewBinding.tideView.setOnTideProgressChangeListener(new TideView.OnTideProgressChangeListener() {
+            @Override
+            public void onTideProgressChange(@NonNull TideView tideView, int progress, boolean fromUser) {
+                viewBinding.progressTextView.setText("Progress: " + progress);
+            }
+        });
+    }
+
+    private int[] getDummyWaveSample() {
+        int[] data = new int[100];
+        for (int i = 0; i < data.length; ++i) {
+            data[i] = new Random().nextInt(data.length);
+        }
+        return data;
     }
 }

@@ -25,32 +25,20 @@
   ~ SOFTWARE.
   -->
 
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:id="@+id/container"
-    tools:context=".MainActivity">
-
-    <dev.alshakib.tide.TideView
-        android:id="@+id/tide_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/progress_text_view"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+<resources>
+    <declare-styleable name="TideView">
+        <attr name="tide_max" format="integer"/>
+        <attr name="tide_progress" format="integer"/>
+        <attr name="tide_width" format="dimension"/>
+        <attr name="tide_gap" format="dimension"/>
+        <attr name="tide_min_height" format="dimension"/>
+        <attr name="tide_corner_radius" format="dimension"/>
+        <attr name="tide_background_color" format="color"/>
+        <attr name="tide_progress_color" format="color"/>
+        <attr name="tide_gravity" format="enum">
+            <enum name="top" value="1" />
+            <enum name="center" value="2" />
+            <enum name="bottom" value="3" />
+        </attr>
+    </declare-styleable>
+</resources>

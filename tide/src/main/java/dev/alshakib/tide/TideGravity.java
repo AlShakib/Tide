@@ -26,5 +26,8 @@
 
 package dev.alshakib.tide;
 
-public class Tide {
+public enum TideGravity {
+    TOP,
+    CENTER,
+    BOTTOM
 }
