@@ -267,6 +267,7 @@ public class TideView extends View {
         if (getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT) {
             setMeasuredDimension(widthMeasureSpec, AndroidExt.convertDpToPxInt(context, 56));
         }
+        setPaddingRelative((int) (tideGap / 2), getPaddingTop(), getPaddingEnd(), getPaddingBottom());
     }
 
     @Override
