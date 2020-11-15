@@ -36,8 +36,8 @@ android {
         applicationId "dev.alshakib.tide.example"
         minSdkVersion 21
         targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
+        versionCode rootProject.tide_version_code
+        versionName "$tide_version"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

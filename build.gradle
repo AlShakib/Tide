@@ -27,7 +27,7 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     ext {
-        tide_version = "1.0.0-alpha1"
+        tide_version = "1.0.0-alpha3"
         tide_version_code = 1
     }
     repositories {
