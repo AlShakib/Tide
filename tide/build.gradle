@@ -24,8 +24,32 @@
  * SOFTWARE.
  */
 
-plugins {
-    id 'com.android.library'
+apply plugin: 'com.android.library'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.github.dcendents.android-maven'
+
+ext {
+    bintrayRepo = "Tide"
+    bintrayName = "dev.alshakib.tide"
+
+    publishedGroupId = 'dev.alshakib.tide'
+    artifact = 'tide'
+    libraryName = 'tide'
+
+    libraryDescription = 'Tide is a modern Waveform Seek Bar library for Android written in Java.'
+
+    siteUrl = 'https://github.com/AlShakib/Tide'
+    gitUrl = 'https://github.com/AlShakib/Tide.git'
+
+    libraryVersion = "$tide_version"
+
+    developerId = 'AlShakib'
+    developerName = 'Al Shakib'
+    developerEmail = 'shakib@alshakib.dev'
+
+    licenseName = 'MIT License'
+    licenseUrl = 'https://github.com/AlShakib/Tide/blob/main/LICENSE'
+    allLicenses = ["MIT"]
 }
 
 android {
@@ -35,8 +59,8 @@ android {
     defaultConfig {
         minSdkVersion 21
         targetSdkVersion 30
-        versionCode 1
-        versionName "1.0"
+        versionCode rootProject.tide_version_code
+        versionName "$tide_version"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -61,8 +85,18 @@ android {
 dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'com.google.android.material:material:1.2.1'
     testImplementation 'junit:junit:4.13.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+//Add these lines to publish library to bintray. This is the readymade scripts made by github user nuuneoi to make uploading to bintray easy.
+//Place it at the end of the file
+if (project.rootProject.file('local.properties').exists()) {
+    apply from: 'install.gradle'
+    apply from: 'bintray.gradle'
 }
