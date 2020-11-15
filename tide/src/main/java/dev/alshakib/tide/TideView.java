@@ -62,12 +62,15 @@ public class TideView extends View {
     private float tideMinHeight;
     private int tideBackgroundColor;
     private int tideProgressColor;
-    private int tideProgress;
+
     private TideGravity tideGravity;
 
     private final Canvas progressCanvas;
 
-    private int max;
+    private float max;
+    private float progress;
+
+
     private float touchDownX;
     private final int scaledTouchSlop;
 
@@ -131,9 +134,9 @@ public class TideView extends View {
         tideProgressColor = styledAttributes.getColor(R.styleable.TideView_tide_progress_color,
                 ContextCompat.getColor(context, R.color.tideProgress));
 
-        max = styledAttributes.getInteger(R.styleable.TideView_tide_max, 1000000);
-        tideProgress = styledAttributes
-                .getInteger(R.styleable.TideView_tide_progress, 25);
+        max = styledAttributes.getInteger(R.styleable.TideView_tide_max, 100);
+        progress = styledAttributes
+                .getInteger(R.styleable.TideView_tide_progress, 0);
 
         tideGravity = TideGravity.CENTER;
 
@@ -232,14 +235,14 @@ public class TideView extends View {
     }
 
     public int getProgress() {
-        return tideProgress;
+        return (int) progress;
     }
 
-    public void setProgress(int tideProgress) {
-        this.tideProgress = tideProgress;
+    public void setProgress(int progress) {
+        this.progress = progress;
         invalidate();
         if (onTideProgressChangeListener != null) {
-            onTideProgressChangeListener.onTideProgressChange(this, tideProgress, false);
+            onTideProgressChangeListener.onTideProgressChange(this, (int) this.progress, false);
         }
     }
 
@@ -253,7 +256,7 @@ public class TideView extends View {
     }
 
     public int getMax() {
-        return max;
+        return (int) max;
     }
 
     public void setMax(int max) {
@@ -267,7 +270,7 @@ public class TideView extends View {
         if (getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT) {
             setMeasuredDimension(widthMeasureSpec, AndroidExt.convertDpToPxInt(context, 56));
         }
-        setPaddingRelative((int) (tideGap / 2), getPaddingTop(), getPaddingEnd(), getPaddingBottom());
+//        setPaddingRelative((int) (tideGap / 2), getPaddingTop(), getPaddingEnd(), getPaddingBottom());
     }
 
     @Override
@@ -285,8 +288,8 @@ public class TideView extends View {
         }
 
         float step = (getAvailableWidth() / (tideGap + tideWidth)) / amplitudeData.length;
-        float lastTideRight = getPaddingLeft();
-        for (float i = 0; i < amplitudeData.length; i += 1 / step) {
+        float tideRight = getPaddingLeft();
+        for (float i = 0f; i < amplitudeData.length; i += 1f / step) {
             float tideHeight = getAvailableHeight() * amplitudeData[(int) i] / amplitudeData.length;
             if (tideHeight < tideMinHeight) {
                 tideHeight = tideMinHeight;
@@ -299,7 +302,7 @@ public class TideView extends View {
                     break;
                 }
                 case CENTER: {
-                    top = getPaddingTop() + getAvailableHeight() / 2 - tideHeight / 2;
+                    top = getPaddingTop() + getAvailableHeight() / 2f - tideHeight / 2f;
                     break;
                 }
                 case BOTTOM: {
@@ -307,31 +310,31 @@ public class TideView extends View {
                     break;
                 }
                 default: {
-                    top = getPaddingTop() + getAvailableHeight() / 2 - tideHeight / 2;
+                    top = getPaddingTop() + getAvailableHeight() / 2f - tideHeight / 2f;
                 }
             }
-            tideRect.set(lastTideRight, top, lastTideRight + tideWidth, top + tideHeight);
+            tideRect.set(tideRight, top, tideRight + tideWidth, top + tideHeight);
 
-            if (tideRect.contains(getAvailableWidth() * tideProgress / max, tideRect.centerY())) {
+            if (tideRect.contains(getAvailableWidth() * progress / max, tideRect.centerY())) {
                 float bitHeight = tideRect.height();
 
-                if (bitHeight <= 0) {
+                if (bitHeight <= 0f) {
                     bitHeight = tideHeight;
                 }
 
                 Bitmap bitmap = createBitmap(bitHeight);
 
                 progressCanvas.setBitmap(bitmap);
-
-                float fillWidth = getAvailableWidth() * tideProgress / max;
+                float fillWidth = getAvailableWidth() * progress / max;
 
                 tidePaint.setColor(tideProgressColor);
-                progressCanvas.drawRect(0, 0, fillWidth, tideRect.bottom, tidePaint);
+                progressCanvas.drawRect(0f, 0f, fillWidth, tideRect.bottom, tidePaint);
+
                 tidePaint.setColor(tideBackgroundColor);
-                progressCanvas.drawRect(fillWidth, 0, getAvailableWidth(), tideRect.bottom, tidePaint);
+                progressCanvas.drawRect(fillWidth, 0f, getAvailableWidth(), tideRect.bottom, tidePaint);
 
                 tidePaint.setShader(createBitmapShader(bitmap));
-            } else if (tideRect.right <= getAvailableWidth() * tideProgress / max) {
+            } else if (tideRect.right <= getAvailableWidth() * progress / max) {
                 tidePaint.setColor(tideProgressColor);
                 tidePaint.setShader(null);
             } else {
@@ -340,9 +343,9 @@ public class TideView extends View {
             }
 
             canvas.drawRoundRect(tideRect, tideCornerRadius, tideCornerRadius, tidePaint);
-            lastTideRight = tideRect.right + tideGap;
+            tideRight = tideRect.right + tideGap;
 
-            if (lastTideRight + tideWidth > getAvailableWidth() + getPaddingLeft()) {
+            if (tideRight + tideWidth > getAvailableWidth() + getPaddingLeft()) {
                 break;
             }
         }
@@ -383,7 +386,7 @@ public class TideView extends View {
     }
 
     private Bitmap createBitmap(float tideHeight) {
-        return Bitmap.createBitmap((int) getAvailableWidth(), (int) tideHeight, Bitmap.Config.ARGB_8888);
+        return Bitmap.createBitmap((int) getAvailableWidth(), (int) tideHeight, Bitmap.Config.RGB_565);
     }
 
     private BitmapShader createBitmapShader(Bitmap bitmap) {
@@ -422,15 +425,15 @@ public class TideView extends View {
     }
 
     private void updateProgress(MotionEvent event) {
-        tideProgress = (int) (max * event.getX() / getAvailableWidth());
-        if (tideProgress < 0) {
-            tideProgress = 0;
-        } else if (tideProgress > max) {
-            tideProgress = max;
+        progress = max * event.getX() / getAvailableWidth();
+        if (progress < 0f) {
+            progress = 0f;
+        } else if (progress > max) {
+            progress = max;
         }
         invalidate();
         if (onTideProgressChangeListener != null) {
-            onTideProgressChangeListener.onTideProgressChange(this, tideProgress, true);
+            onTideProgressChangeListener.onTideProgressChange(this, (int) progress, true);
         }
     }
 
