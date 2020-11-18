@@ -24,35 +24,26 @@
  * SOFTWARE.
  */
 
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-buildscript {
-    ext {
-        tide_version = "1.0.0-alpha3"
-        tide_version_code = 1
-    }
-    repositories {
-        google()
-        jcenter()
-    }
-    dependencies {
-        classpath "com.android.tools.build:gradle:4.1.1"
-        classpath "androidx.navigation:navigation-safe-args-gradle-plugin:2.3.1"
+package dev.alshakib.tide.example.adapter.viewholder;
 
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5'
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
+import android.view.View;
 
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
+import androidx.annotation.NonNull;
+
+import dev.alshakib.rvcompat.viewholder.ViewHolderCompat;
+import dev.alshakib.tide.example.databinding.MusicViewHolderBinding;
+
+public class MusicViewHolderCompat extends ViewHolderCompat {
+
+    private final MusicViewHolderBinding viewBinding;
+
+    public MusicViewHolderCompat(@NonNull View itemView) {
+        super(itemView);
+        this.viewBinding = MusicViewHolderBinding.bind(itemView);
+        viewBinding.getRoot().setOnClickListener(this);
     }
-}
 
-allprojects {
-    repositories {
-        google()
-        jcenter()
+    public MusicViewHolderBinding getViewBinding() {
+        return viewBinding;
     }
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
 }

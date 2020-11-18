@@ -24,35 +24,21 @@
  * SOFTWARE.
  */
 
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-buildscript {
-    ext {
-        tide_version = "1.0.0-alpha3"
-        tide_version_code = 1
-    }
-    repositories {
-        google()
-        jcenter()
-    }
-    dependencies {
-        classpath "com.android.tools.build:gradle:4.1.1"
-        classpath "androidx.navigation:navigation-safe-args-gradle-plugin:2.3.1"
+package dev.alshakib.tide.example.adapter.diff;
 
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5'
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
+import dev.alshakib.tide.example.data.model.Music;
+
+public class MusicDiffUtilItemCallback extends DiffUtil.ItemCallback<Music> {
+    @Override
+    public boolean areItemsTheSame(@NonNull Music oldItem, @NonNull Music newItem) {
+        return oldItem.getId() == newItem.getId();
     }
-}
 
-allprojects {
-    repositories {
-        google()
-        jcenter()
+    @Override
+    public boolean areContentsTheSame(@NonNull Music oldItem, @NonNull Music newItem) {
+        return oldItem.equals(newItem);
     }
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
 }

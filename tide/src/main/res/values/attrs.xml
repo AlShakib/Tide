@@ -27,18 +27,14 @@
 
 <resources>
     <declare-styleable name="TideView">
-        <attr name="tide_max" format="integer"/>
-        <attr name="tide_progress" format="integer"/>
-        <attr name="tide_width" format="dimension"/>
-        <attr name="tide_gap" format="dimension"/>
-        <attr name="tide_min_height" format="dimension"/>
-        <attr name="tide_corner_radius" format="dimension"/>
-        <attr name="tide_background_color" format="color"/>
-        <attr name="tide_progress_color" format="color"/>
-        <attr name="tide_gravity" format="enum">
-            <enum name="top" value="1" />
-            <enum name="center" value="2" />
-            <enum name="bottom" value="3" />
-        </attr>
+        <attr format="color" name="waveColor"/>
+        <attr format="dimension" name="chunkWidth"/>
+        <attr format="dimension" name="chunkHeight"/>
+        <attr format="dimension" name="minChunkHeight"/>
+        <attr format="dimension" name="chunkRadius"/>
+        <attr format="dimension" name="chunkSpacing"/>
+        <attr format="float" name="progress"/>
+        <attr format="boolean" name="animateExpansion"/>
+        <attr format="boolean" name="touchable"/>
     </declare-styleable>
 </resources>

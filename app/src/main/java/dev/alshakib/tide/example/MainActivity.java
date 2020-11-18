@@ -28,39 +28,38 @@ package dev.alshakib.tide.example;
 
 import android.os.Bundle;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+import androidx.navigation.ui.AppBarConfiguration;
+import androidx.navigation.ui.NavigationUI;
 
-import java.util.Random;
-
-import dev.alshakib.tide.TideView;
 import dev.alshakib.tide.example.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
     private ActivityMainBinding viewBinding;
+    private NavController navController;
+    private AppBarConfiguration appBarConfiguration;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         viewBinding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(viewBinding.getRoot());
+        setSupportActionBar(viewBinding.materialToolbar);
 
-        viewBinding.tideView.setAmplitudeData(getDummyWaveSample());
-
-        viewBinding.tideView.setOnTideProgressChangeListener(new TideView.OnTideProgressChangeListener() {
-            @Override
-            public void onTideProgressChange(@NonNull TideView tideView, int progress, boolean fromUser) {
-                viewBinding.progressTextView.setText("Progress: " + progress);
-            }
-        });
+        navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+        appBarConfiguration = new AppBarConfiguration
+                .Builder(R.id.nav_music_list)
+                .build();
+        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
     }
 
-    private int[] getDummyWaveSample() {
-        int[] data = new int[100];
-        for (int i = 0; i < data.length; ++i) {
-            data[i] = new Random().nextInt(data.length);
-        }
-        return data;
+    @Override
+    public boolean onSupportNavigateUp() {
+        return NavigationUI.navigateUp(navController, appBarConfiguration)
+                || super.onSupportNavigateUp();
     }
 }

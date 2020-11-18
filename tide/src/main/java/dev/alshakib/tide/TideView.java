@@ -26,418 +26,382 @@
 
 package dev.alshakib.tide;
 
+import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
-import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewConfiguration;
-import android.view.ViewGroup;
+import android.view.animation.OvershootInterpolator;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
-import dev.alshakib.tide.extension.AndroidExt;
+public class TideView extends View implements ValueAnimator.AnimatorUpdateListener {
+    private static final String LOG_TAG = TideView.class.getSimpleName();
 
-import static java.lang.Math.abs;
+    private OnProgressListener onProgressListener;
+    private Sampler sampler;
 
-public class TideView extends View {
-    private final Context context;
-
-    private int canvasWidth;
-    private int canvasHeight;
-
-    private final Paint tidePaint;
-    private final RectF tideRect;
-    private float tideWidth;
-    private float tideGap;
-    private float tideCornerRadius;
-    private float tideMinHeight;
-    private int tideBackgroundColor;
-    private int tideProgressColor;
-
-    private TideGravity tideGravity;
-
-    private final Canvas progressCanvas;
-
-    private float max;
+    private int chunkHeight;
+    private int chunkWidth;
+    private int chunkSpacing;
+    private int chunkRadius;
+    private int minChunkHeight;
+    private int waveColor;
     private float progress;
-
-
-    private float touchDownX;
-    private final int scaledTouchSlop;
-
-    private int[] amplitudeData;
-
-    private OnTideProgressChangeListener onTideProgressChangeListener;
+    private byte[] scaledData;
+    private long expansionDuration;
+    private boolean isExpansionAnimated;
+    private boolean isTouchable;
+    private boolean isTouched;
+    private long initialDelay;
+    private ValueAnimator expansionAnimator;
+    private Paint wavePaint;
+    private Paint waveFilledPaint;
+    private Bitmap waveBitmap;
+    private int width;
+    private int height;
 
     public TideView(Context context) {
         super(context);
-        this.context = context;
-        this.tidePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        this.tideRect = new RectF();
-        this.progressCanvas = new Canvas();
-        this.scaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
+        setWillNotDraw(false);
+        init(context);
     }
 
-    public TideView(Context context, @Nullable AttributeSet attrs) {
+    public TideView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        this.context = context;
-        this.tidePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        this.tideRect = new RectF();
-        this.progressCanvas = new Canvas();
-        this.scaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
-        init(attrs);
+        setWillNotDraw(false);
+        init(context);
+        inflateAttrs(attrs);
     }
 
-    public TideView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public TideView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        this.context = context;
-        this.tidePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        this.tideRect = new RectF();
-        this.progressCanvas = new Canvas();
-        this.scaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
-        init(attrs);
+        setWillNotDraw(false);
+        init(context);
+        inflateAttrs(attrs);
     }
 
-    public TideView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public TideView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
-        this.context = context;
-        this.tidePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        this.tideRect = new RectF();
-        this.progressCanvas = new Canvas();
-        this.scaledTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
-
-        init(attrs);
+        setWillNotDraw(false);
+        init(context);
+        inflateAttrs(attrs);
     }
 
-    private void init(AttributeSet attributeSet) {
-        TypedArray styledAttributes = context.obtainStyledAttributes(attributeSet, R.styleable.TideView);
+    private void init(Context context) {
+        this.sampler = Sampler.getInstance();
 
-        tideWidth = styledAttributes.getDimensionPixelOffset(R.styleable.TideView_tide_width,
-                        AndroidExt.convertDpToPxInt(context,5));
-        tideGap = styledAttributes.getDimensionPixelOffset(R.styleable.TideView_tide_gap,
-                        AndroidExt.convertDpToPxInt(context,2));
-        tideCornerRadius = styledAttributes.getDimensionPixelOffset(R.styleable.TideView_tide_corner_radius,
-                AndroidExt.convertDpToPxInt(context, 2));
-        tideMinHeight = styledAttributes.getDimensionPixelOffset(R.styleable.TideView_tide_min_height,
-                        AndroidExt.convertDpToPxInt(context, 10));
-        tideBackgroundColor = styledAttributes.getColor(R.styleable.TideView_tide_background_color,
-                ContextCompat.getColor(context, R.color.tideBackground));
-        tideProgressColor = styledAttributes.getColor(R.styleable.TideView_tide_progress_color,
-                ContextCompat.getColor(context, R.color.tideProgress));
-
-        max = styledAttributes.getInteger(R.styleable.TideView_tide_max, 100);
-        progress = styledAttributes
-                .getInteger(R.styleable.TideView_tide_progress, 0);
-
-        tideGravity = TideGravity.CENTER;
-
-        String gravity = styledAttributes
-                .getString(R.styleable.TideView_tide_gravity);
-
-        if (gravity != null) {
-            switch (gravity) {
-                case "1": {
-                    tideGravity = TideGravity.TOP;
-                    break;
-                }
-                case "2": {
-                    tideGravity = TideGravity.CENTER;
-                    break;
-                }
-                case "3": {
-                    tideGravity = TideGravity.BOTTOM;
-                    break;
-                }
-                default: {
-                    tideGravity = TideGravity.CENTER;
-                }
-            }
-        }
-
-        styledAttributes.recycle();
-    }
-
-    public void setOnTideProgressChangeListener(@Nullable OnTideProgressChangeListener onTideProgressChangeListener) {
-        this.onTideProgressChangeListener = onTideProgressChangeListener;
-    }
-
-    public void setAmplitudeData(@NonNull int[] data) {
-        this.amplitudeData = data;
-        invalidate();
+        this.chunkWidth = Graphics.dpToPx(context, 5);
+        this.chunkSpacing = Graphics.dpToPx(context, 2);
+        this.minChunkHeight = Graphics.dpToPx(context, 2);
+        this.waveColor = ContextCompat.getColor(context, R.color.tideProgress);
+        this.scaledData = new byte[0];
+        this.expansionDuration = 400L;
+        this.isExpansionAnimated = true;
+        this.isTouchable = true;
+        this.initialDelay = 50L;
+        ValueAnimator valueAnimator = ValueAnimator.ofFloat(0.0F, 1.0F);
+        valueAnimator.setDuration(this.expansionDuration);
+        valueAnimator.setInterpolator(new OvershootInterpolator());
+        valueAnimator.addUpdateListener(this);
+        this.expansionAnimator = valueAnimator;
+        this.wavePaint = Graphics.getSmoothPaint(Graphics.withAlpha(waveColor,170));
+        this.waveFilledPaint = Graphics.getFilterPaint(this.waveColor);
     }
 
     @Nullable
-    public int[] getAmplitudeData() {
-        return amplitudeData;
+    public OnProgressListener getOnProgressListener() {
+        return this.onProgressListener;
     }
 
-    public float getTideWidth() {
-        return tideWidth;
+    public void setOnProgressListener(@Nullable OnProgressListener onProgressListener) {
+        this.onProgressListener = onProgressListener;
     }
 
-    public void setTideWidth(float tideWidth) {
-        this.tideWidth = tideWidth;
-        invalidate();
+    public int getChunkHeight() {
+        return this.chunkHeight == 0 ? this.height : Math.abs(this.chunkHeight);
     }
 
-    public float getTideGap() {
-        return tideGap;
+    public void setChunkHeight(int value) {
+        this.chunkHeight = value;
+        redrawData();
     }
 
-    public void setTideGap(float tideGap) {
-        this.tideGap = tideGap;
-        invalidate();
+    public int getChunkWidth() {
+        return this.chunkWidth;
     }
 
-    public float getTideCornerRadius() {
-        return tideCornerRadius;
+    public void setChunkWidth(int value) {
+        this.chunkWidth = Math.abs(value);
+        redrawData();
     }
 
-    public void setTideCornerRadius(float tideCornerRadius) {
-        this.tideCornerRadius = tideCornerRadius;
-        invalidate();
+    public int getChunkSpacing() {
+        return this.chunkSpacing;
     }
 
-    public float getTideMinHeight() {
-        return tideMinHeight;
+    public void setChunkSpacing(int value) {
+        this.chunkSpacing = Math.abs(value);
+        redrawData();
     }
 
-    public void setTideMinHeight(float tideMinHeight) {
-        this.tideMinHeight = tideMinHeight;
-        invalidate();
+    public int getChunkRadius() {
+        return this.chunkRadius;
     }
 
-    public int getTideBackgroundColor() {
-        return tideBackgroundColor;
+    public void setChunkRadius(int value) {
+        this.chunkRadius = Math.abs(value);
+        redrawData();
     }
 
-    public void setTideBackgroundColor(int tideBackgroundColor) {
-        this.tideBackgroundColor = tideBackgroundColor;
-        invalidate();
+    public int getMinChunkHeight() {
+        return this.minChunkHeight;
     }
 
-    public int getProgressColor() {
-        return tideProgressColor;
+    public void setMinChunkHeight(int value) {
+        this.minChunkHeight = Math.abs(value);
+        redrawData();
     }
 
-    public void setProgressColor(int tideProgressColor) {
-        this.tideProgressColor = tideProgressColor;
-        invalidate();
+    public int getWaveColor() {
+        return this.waveColor;
     }
 
-    public int getProgress() {
-        return (int) progress;
+    public void setWaveColor(int value) {
+        this.wavePaint = Graphics.getSmoothPaint(Graphics.withAlpha(value, 170));
+        this.waveFilledPaint = Graphics.getFilterPaint(value);
+        redrawData();
     }
 
-    public void setProgress(int progress) {
-        this.progress = progress;
-        invalidate();
-        if (onTideProgressChangeListener != null) {
-            onTideProgressChangeListener.onTideProgressChange(this, (int) this.progress, false);
+    public float getProgress() {
+        return this.progress;
+    }
+
+    public void setProgress(float value) {
+        if (value >= 0 && value <= 100) {
+            this.progress = Math.abs(value);
+            if (onProgressListener != null) {
+                onProgressListener.onProgressChanged(this, this.progress, this.isTouched);
+            }
+            postInvalidate();
         }
     }
 
-    public TideGravity getTideGravity() {
-        return tideGravity;
+    @NonNull
+    public byte[] getScaledData() {
+        return this.scaledData;
     }
 
-    public void setTideGravity(TideGravity tideGravity) {
-        this.tideGravity = tideGravity;
-        invalidate();
+    public void setScaledData(@NonNull byte[] value) {
+        this.scaledData = value.length <= this.getChunksCount() ? sampler.paste(new byte[this.getChunksCount()], value) : value;
+        redrawData();
     }
 
-    public int getMax() {
-        return (int) max;
+    public long getExpansionDuration() {
+        return this.expansionDuration;
     }
 
-    public void setMax(int max) {
-        this.max = max;
-        invalidate();
+    public final void setExpansionDuration(long value) {
+        this.expansionDuration = Math.max(400L, value);
+        ValueAnimator valueAnimator = this.expansionAnimator;
+        valueAnimator.setDuration(this.expansionDuration);
     }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        if (getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT) {
-            setMeasuredDimension(widthMeasureSpec, AndroidExt.convertDpToPxInt(context, 56));
-        }
-//        setPaddingRelative((int) (tideGap / 2), getPaddingTop(), getPaddingEnd(), getPaddingBottom());
+    public boolean isExpansionAnimated() {
+        return this.isExpansionAnimated;
     }
 
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        canvasWidth = w;
-        canvasHeight = h;
+    public void setExpansionAnimated(boolean flag) {
+        this.isExpansionAnimated = flag;
     }
 
-    @Override
+    public boolean isTouchable() {
+        return this.isTouchable;
+    }
+
+    public void setTouchable(boolean flag) {
+        this.isTouchable = flag;
+    }
+
+    public boolean isTouched() {
+        return this.isTouched;
+    }
+
+    public int getChunksCount() {
+        return this.width / this.getChunkStep();
+    }
+
+    private int getChunkStep() {
+        return this.chunkWidth + this.chunkSpacing;
+    }
+
+    private int getCenterY() {
+        return this.height / 2;
+    }
+
+    private float getProgressFactor() {
+        return this.progress / 100.0F;
+    }
+
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (amplitudeData == null || amplitudeData.length <= 0) {
-            return;
-        }
-
-        float step = (getAvailableWidth() / (tideGap + tideWidth)) / amplitudeData.length;
-        float tideRight = getPaddingLeft();
-        for (float i = 0f; i < amplitudeData.length; i += 1f / step) {
-            float tideHeight = getAvailableHeight() * amplitudeData[(int) i] / amplitudeData.length;
-            if (tideHeight < tideMinHeight) {
-                tideHeight = tideMinHeight;
-            }
-
-            float top;
-            switch (tideGravity) {
-                case TOP: {
-                    top = getPaddingTop();
-                    break;
-                }
-                case CENTER: {
-                    top = getPaddingTop() + getAvailableHeight() / 2f - tideHeight / 2f;
-                    break;
-                }
-                case BOTTOM: {
-                    top = canvasHeight - getPaddingBottom() - tideHeight;
-                    break;
-                }
-                default: {
-                    top = getPaddingTop() + getAvailableHeight() / 2f - tideHeight / 2f;
-                }
-            }
-            tideRect.set(tideRight, top, tideRight + tideWidth, top + tideHeight);
-
-            if (tideRect.contains(getAvailableWidth() * progress / max, tideRect.centerY())) {
-                float bitHeight = tideRect.height();
-
-                if (bitHeight <= 0f) {
-                    bitHeight = tideHeight;
-                }
-
-                Bitmap bitmap = createBitmap(bitHeight);
-
-                progressCanvas.setBitmap(bitmap);
-                float fillWidth = getAvailableWidth() * progress / max;
-
-                tidePaint.setColor(tideProgressColor);
-                progressCanvas.drawRect(0f, 0f, fillWidth, tideRect.bottom, tidePaint);
-
-                tidePaint.setColor(tideBackgroundColor);
-                progressCanvas.drawRect(fillWidth, 0f, getAvailableWidth(), tideRect.bottom, tidePaint);
-
-                tidePaint.setShader(createBitmapShader(bitmap));
-            } else if (tideRect.right <= getAvailableWidth() * progress / max) {
-                tidePaint.setColor(tideProgressColor);
-                tidePaint.setShader(null);
-            } else {
-                tidePaint.setColor(tideBackgroundColor);
-                tidePaint.setShader(null);
-            }
-
-            canvas.drawRoundRect(tideRect, tideCornerRadius, tideCornerRadius, tidePaint);
-            tideRight = tideRect.right + tideGap;
-
-            if (tideRight + tideWidth > getAvailableWidth() + getPaddingLeft()) {
-                break;
-            }
+        if (canvas != null) {
+            canvas.save();
+            canvas.clipRect(0, 0, width, height);
+            canvas.drawBitmap(waveBitmap, 0.0F, 0.0F, wavePaint);
+            canvas.restore();
+            canvas.save();
+            canvas.clipRect(0.0F, 0.0F, (float) width * getProgressFactor(), (float) height);
+            canvas.drawBitmap(waveBitmap, 0.0F, 0.0F, waveFilledPaint);
+            canvas.restore();
         }
     }
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        if (!isEnabled()) {
-            return false;
-        }
-        switch (event.getAction()) {
-            case MotionEvent.ACTION_DOWN: {
-                if (isParentScrolling()) {
-                    touchDownX = event.getX();
+    @SuppressLint({"DrawAllocation"})
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        this.width = right - left;
+        this.height = bottom - top;
+        if (!Graphics.fits(this.waveBitmap, this.width, this.height)) {
+            if (changed) {
+                Graphics.safeRecycle(this.waveBitmap);
+                this.waveBitmap = Bitmap.createBitmap(this.width, this.height, Bitmap.Config.ARGB_8888);
+                if (this.scaledData.length == 0) {
+                    this.setScaledData(new byte[0]);
                 } else {
-                    updateProgress(event);
+                    this.setScaledData(this.scaledData);
                 }
-                break;
-            }
-            case MotionEvent.ACTION_MOVE: {
-                updateProgress(event);
-                break;
-            }
-            case MotionEvent.ACTION_UP: {
-                if (abs(event.getX() - touchDownX) > scaledTouchSlop) {
-                    updateProgress(event);
-                }
-                performClick();
             }
         }
-        return true;
     }
 
-    @Override
-    public boolean performClick() {
-        super.performClick();
-        return true;
-    }
-
-    private Bitmap createBitmap(float tideHeight) {
-        return Bitmap.createBitmap((int) getAvailableWidth(), (int) tideHeight, Bitmap.Config.RGB_565);
-    }
-
-    private BitmapShader createBitmapShader(Bitmap bitmap) {
-        return new BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
-    }
-
-    private float getAvailableWidth() {
-        return canvasWidth - getPaddingLeft() - getPaddingRight();
-    }
-
-    private float getAvailableHeight() {
-        return canvasHeight - getPaddingTop() - getPaddingBottom();
-    }
-
-    private boolean isParentScrolling() {
-        View parent = (View) getParent();
-
-        while (true) {
-            if (parent.canScrollHorizontally(1)) {
-                return true;
-            }
-            if (parent.canScrollHorizontally(-1)) {
-                return true;
-            }
-            if (parent.canScrollVertically(1)) {
-                return true;
-            }
-            if (parent.canScrollVertically(-1)) {
-                return true;
-            }
-            if (parent == getRootView()) {
+    @SuppressLint({"ClickableViewAccessibility"})
+    public boolean onTouchEvent(@Nullable MotionEvent event) {
+        if (event != null) {
+            if (this.isTouchable && this.isEnabled()) {
+                switch(event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        this.isTouched = true;
+                        this.setProgress(this.toProgress(event));
+                        if (onProgressListener != null) {
+                            onProgressListener.onStartTracking(this, this.progress);
+                        }
+                        return true;
+                    case MotionEvent.ACTION_UP:
+                        this.isTouched = false;
+                        if (onProgressListener != null) {
+                            onProgressListener.onStopTracking(this, this.progress);
+                        }
+                        return false;
+                    case MotionEvent.ACTION_MOVE:
+                        this.isTouched = true;
+                        this.setProgress(this.toProgress(event));
+                        return true;
+                    default:
+                        this.isTouched = false;
+                        return super.onTouchEvent(event);
+                }
+            } else {
                 return false;
             }
-            parent = (View) parent.getParent();
+        }
+        return super.onTouchEvent(event);
+    }
+
+    public void setRawData(@NonNull final byte[] raw, final @Nullable OnSamplingListener callback) {
+        Sampler.MAIN_THREAD.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                sampler.downSampleAsync(raw, getChunksCount(), new Sampler.OnSamplerListener() {
+                    @Override
+                    public void resultAsync(byte[] result) {
+                        setScaledData(result);
+                        if (isExpansionAnimated()) {
+                            animateExpansion();
+                        }
+                        if (callback != null) {
+                            callback.onComplete();
+                        }
+                    }
+                });
+            }
+        }, initialDelay);
+    }
+
+    public final void setRawData(@NonNull final byte[] raw) {
+        setRawData(raw, null);
+    }
+
+    private float toProgress(@NonNull MotionEvent motionEvent) {
+        return Graphics.clamp(motionEvent.getX(), 0.0F, (float) this.width) / (float) this.width * 100.0F;
+    }
+
+    private void redrawData(Canvas canvas, float factor) {
+        if (this.waveBitmap != null) {
+            Graphics.flush(this.waveBitmap);
+            for (int i = 0; i < this.scaledData.length; ++i) {
+                byte b = this.scaledData[i];
+                int chunkHeight = (int) (((float) sampler.getAbs(b) / (float) Byte.MAX_VALUE) * getChunkHeight());
+                int clampedHeight = Math.max(chunkHeight, minChunkHeight);
+                float heightDiff = (float) (clampedHeight - minChunkHeight);
+                int animatedDiff = (int) (heightDiff * factor);
+
+                RectF rectF = Graphics.rectFOf(chunkSpacing / 2f + i * getChunkStep(),
+                        getCenterY() - minChunkHeight - animatedDiff,
+                        chunkSpacing / 2f + i * getChunkStep() + chunkWidth,
+                        getCenterY() + minChunkHeight + animatedDiff);
+                canvas.drawRoundRect(rectF, chunkRadius, chunkRadius, wavePaint);
+            }
+            postInvalidate();
         }
     }
 
-    private void updateProgress(MotionEvent event) {
-        progress = max * event.getX() / getAvailableWidth();
-        if (progress < 0f) {
-            progress = 0f;
-        } else if (progress > max) {
-            progress = max;
-        }
-        invalidate();
-        if (onTideProgressChangeListener != null) {
-            onTideProgressChangeListener.onTideProgressChange(this, (int) progress, true);
+    private void redrawData() {
+        if (waveBitmap != null) {
+            Canvas canvas = Graphics.inCanvas(waveBitmap);
+            redrawData(canvas, 1);
         }
     }
 
-    public interface OnTideProgressChangeListener {
-        void onTideProgressChange(@NonNull TideView tideView, int progress, boolean fromUser);
+    private void animateExpansion() {
+        this.expansionAnimator.start();
+    }
+
+    private void inflateAttrs(AttributeSet attrs) {
+        TypedArray resAttrs = getContext().getTheme().obtainStyledAttributes(attrs, R.styleable.TideView, 0, 0);
+        if (resAttrs != null) {
+            this.setChunkHeight(resAttrs.getDimensionPixelSize(R.styleable.TideView_chunkHeight, this.getChunkHeight()));
+            this.setChunkWidth(resAttrs.getDimensionPixelSize(R.styleable.TideView_chunkWidth, this.chunkWidth));
+            this.setChunkSpacing(resAttrs.getDimensionPixelSize(R.styleable.TideView_chunkSpacing, this.chunkSpacing));
+            this.setMinChunkHeight(resAttrs.getDimensionPixelSize(R.styleable.TideView_minChunkHeight, this.minChunkHeight));
+            this.setChunkRadius(resAttrs.getDimensionPixelSize(R.styleable.TideView_chunkRadius, this.chunkRadius));
+            this.isTouchable = resAttrs.getBoolean(R.styleable.TideView_touchable, this.isTouchable);
+            this.setWaveColor(resAttrs.getColor(R.styleable.TideView_waveColor, this.waveColor));
+            this.setProgress(resAttrs.getFloat(R.styleable.TideView_progress, this.progress));
+            this.isExpansionAnimated = resAttrs.getBoolean(R.styleable.TideView_animateExpansion, this.isExpansionAnimated);
+            resAttrs.recycle();
+        }
+    }
+
+    @Override
+    public void onAnimationUpdate(ValueAnimator valueAnimator) {
+        redrawData(Graphics.inCanvas(waveBitmap), valueAnimator.getAnimatedFraction());
+    }
+
+    public interface OnProgressListener {
+        void onStartTracking(@NonNull TideView tideView, float progress);
+        void onStopTracking(@NonNull TideView tideView, float progress);
+        void onProgressChanged(@NonNull TideView tideView, float progress, boolean fromUser);
+    }
+
+    public interface OnSamplingListener {
+        void onComplete();
     }
 }

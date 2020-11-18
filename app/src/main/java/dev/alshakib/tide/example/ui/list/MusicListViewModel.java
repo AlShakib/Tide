@@ -24,10 +24,31 @@
  * SOFTWARE.
  */
 
-package dev.alshakib.tide;
+package dev.alshakib.tide.example.ui.list;
 
-public enum TideGravity {
-    TOP,
-    CENTER,
-    BOTTOM
+import android.app.Application;
+
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
+
+import java.util.List;
+
+import dev.alshakib.tide.example.data.MusicProvider;
+import dev.alshakib.tide.example.data.model.Music;
+
+public class MusicListViewModel extends AndroidViewModel {
+    private static final String LOG_TAG = MusicListViewModel.class.getSimpleName();
+
+    private final MusicProvider musicProvider;
+
+    public MusicListViewModel(@NonNull Application application) {
+        super(application);
+        this.musicProvider = MusicProvider.getInstance(application);
+        this.musicProvider.loadMusicList();
+    }
+
+    public LiveData<List<Music>> getMusicListLiveData() {
+        return musicProvider.getMusicListLiveData();
+    }
 }
