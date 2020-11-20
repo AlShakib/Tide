@@ -86,9 +86,6 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     private Paint waveFilledPaint;
     private Bitmap waveBitmap;
 
-    private int width;
-    private int height;
-
     public TideView(Context context) {
         super(context);
         setWillNotDraw(false);
@@ -301,7 +298,7 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     public int getChunksCount() {
-        return width / getChunkStep();
+        return getWidth() / getChunkStep();
     }
 
     private int getChunkStep() {
@@ -309,7 +306,7 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     private int getCenterY() {
-        return this.height / 2;
+        return getHeight() / 2;
     }
 
     private float getProgressFactor() {
@@ -320,11 +317,11 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
         super.onDraw(canvas);
         if (canvas != null) {
             canvas.save();
-            canvas.clipRect(0, 0, width, height);
+            canvas.clipRect(0, 0, getWidth(), getHeight());
             canvas.drawBitmap(waveBitmap, 0.0F, 0.0F, wavePaint);
             canvas.restore();
             canvas.save();
-            canvas.clipRect(0.0F, 0.0F, (float) width * getProgressFactor(), (float) height);
+            canvas.clipRect(0.0F, 0.0F, (float) getWidth() * getProgressFactor(), (float) getHeight());
             canvas.drawBitmap(waveBitmap, 0.0F, 0.0F, waveFilledPaint);
             canvas.restore();
         }
@@ -332,12 +329,10 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
 
     @SuppressLint({"DrawAllocation"})
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        this.width = right - left;
-        this.height = bottom - top;
-        if (!Graphics.fits(this.waveBitmap, this.width, this.height)) {
+        if (!Graphics.fits(this.waveBitmap, getWidth(), getHeight())) {
             if (changed) {
                 Graphics.safeRecycle(this.waveBitmap);
-                this.waveBitmap = Bitmap.createBitmap(this.width, this.height, Bitmap.Config.ARGB_8888);
+                this.waveBitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
                 if (this.scaledData.length == 0) {
                     this.setScaledData(new byte[0]);
                 } else {
@@ -405,7 +400,7 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     private int toProgress(@NonNull MotionEvent motionEvent) {
-        return (int) (Graphics.clamp(motionEvent.getX(), 0.0F, (float) getWidth()) / (float) this.width * maxProgress);
+        return (int) (Graphics.clamp(motionEvent.getX(), 0.0F, (float) getWidth()) / (float) getWidth() * maxProgress);
     }
 
     private void redrawData(Canvas canvas, float factor) {
