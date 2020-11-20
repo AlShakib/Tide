@@ -36,6 +36,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
@@ -56,7 +57,7 @@ public class Graphics {
     }
 
     @NonNull
-    public static Paint getFilterPaint(int color) {
+    public static Paint getFilterPaint(@ColorInt int color) {
         Paint paint = new Paint();
         paint.setAntiAlias(true);
         paint.setColorFilter(filterOf(color));
@@ -73,7 +74,7 @@ public class Graphics {
         return new RectF(left, top, right, bottom);
     }
 
-    public static int withAlpha(int color, int alpha) {
+    public static int withAlpha(@ColorInt int color, int alpha) {
         return ColorUtils.setAlphaComponent(color, alpha);
     }
 

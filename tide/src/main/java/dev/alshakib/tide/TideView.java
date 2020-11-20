@@ -39,6 +39,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.OvershootInterpolator;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.Dimension;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -46,150 +48,213 @@ import androidx.core.content.ContextCompat;
 public class TideView extends View implements ValueAnimator.AnimatorUpdateListener {
     private static final String LOG_TAG = TideView.class.getSimpleName();
 
+    private static final int DEFAULT_CHUNK_WIDTH_DP = 4;
+    private static final int DEFAULT_CHUNK_MAX_HEIGHT_DP = 56;
+    private static final int DEFAULT_CHUNK_MIN_HEIGHT_DP = 8;
+    private static final int DEFAULT_CHUNK_SPACING_DP = 2;
+    private static final int DEFAULT_CHUNK_RADIUS_DP = 2;
+    private static final int DEFAULT_MAX_PROGRESS = 100;
+    private static final int DEFAULT_PROGRESS = 0;
+    private static final int DEFAULT_ANIMATE_EXPANSION_DURATION = 400;
+    private static final boolean DEFAULT_ANIMATE_EXPANSION_STATUS = true;
+    private static final boolean DEFAULT_AS_SEEK_BAR_STATUS = true;
+
+    private static final int DEFAULT_PRIMARY_COLOR_ALPHA = 170;
+
+
     private OnProgressListener onProgressListener;
     private Sampler sampler;
 
-    private int chunkHeight;
+    private int primaryColor;
+    private int chunkMaxHeight;
+    private int chunkMinHeight;
     private int chunkWidth;
     private int chunkSpacing;
     private int chunkRadius;
-    private int minChunkHeight;
-    private int waveColor;
-    private float progress;
-    private byte[] scaledData;
-    private long expansionDuration;
-    private boolean isExpansionAnimated;
-    private boolean isTouchable;
-    private boolean isTouched;
+    private int maxProgress;
+    private int progress;
+    private long animateExpansionDuration;
+    private boolean animateExpansion;
+    private boolean asSeekBar;
+
     private long initialDelay;
+    private boolean isTouched;
+
+    private byte[] scaledData;
+
     private ValueAnimator expansionAnimator;
     private Paint wavePaint;
     private Paint waveFilledPaint;
     private Bitmap waveBitmap;
+
     private int width;
     private int height;
 
     public TideView(Context context) {
         super(context);
         setWillNotDraw(false);
-        init(context);
+        if (context != null) {
+            init(context);
+        }
     }
 
     public TideView(Context context, AttributeSet attrs) {
         super(context, attrs);
         setWillNotDraw(false);
-        init(context);
-        inflateAttrs(attrs);
+        if (context != null && attrs != null) {
+            inflateAttrs(attrs, context);
+            init(context);
+        }
     }
 
     public TideView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         setWillNotDraw(false);
-        init(context);
-        inflateAttrs(attrs);
+        if (context != null && attrs != null) {
+            inflateAttrs(attrs, context);
+            init(context);
+        }
     }
 
     public TideView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         setWillNotDraw(false);
-        init(context);
-        inflateAttrs(attrs);
+        if (context != null && attrs != null) {
+            inflateAttrs(attrs, context);
+            init(context);
+        }
     }
 
-    private void init(Context context) {
-        this.sampler = Sampler.getInstance();
+    private void inflateAttrs(@NonNull AttributeSet attrs, @NonNull Context context) {
+        TypedArray resAttrs = getContext().getTheme().obtainStyledAttributes(attrs, R.styleable.TideView, 0, 0);
+        if (resAttrs != null) {
+            primaryColor = resAttrs.getColor(R.styleable.TideView_tidePrimaryColor,
+                    ContextCompat.getColor(context,R.color.primary));
+            chunkWidth = resAttrs.getDimensionPixelSize(R.styleable.TideView_tideChunkWidth,
+                    AndroidExt.dpToPx(context, DEFAULT_CHUNK_WIDTH_DP));
+            chunkMaxHeight = resAttrs.getDimensionPixelSize(R.styleable.TideView_tideChunkMaxHeight,
+                    AndroidExt.dpToPx(context, DEFAULT_CHUNK_MAX_HEIGHT_DP));
+            chunkMinHeight = resAttrs.getDimensionPixelSize(R.styleable.TideView_tideChunkMinHeight,
+                    AndroidExt.dpToPx(context, DEFAULT_CHUNK_MIN_HEIGHT_DP));
+            chunkRadius = resAttrs.getDimensionPixelSize(R.styleable.TideView_tideChunkRadius,
+                    AndroidExt.dpToPx(context, DEFAULT_CHUNK_RADIUS_DP));
+            chunkSpacing = resAttrs.getDimensionPixelSize(R.styleable.TideView_tideChunkSpacing,
+                    AndroidExt.dpToPx(context, DEFAULT_CHUNK_SPACING_DP));
+            maxProgress = resAttrs.getInt(R.styleable.TideView_tideMaxProgress,
+                    DEFAULT_MAX_PROGRESS);
+            progress = resAttrs.getInt(R.styleable.TideView_tideProgress,
+                    DEFAULT_PROGRESS);
+            animateExpansionDuration = resAttrs.getInt(R.styleable.TideView_tideAnimateExpansionDuration,
+                    DEFAULT_ANIMATE_EXPANSION_DURATION);
+            animateExpansion = resAttrs.getBoolean(R.styleable.TideView_tideAnimateExpansion,
+                    DEFAULT_ANIMATE_EXPANSION_STATUS);
+            asSeekBar = resAttrs.getBoolean(R.styleable.TideView_tideAsSeekBar,
+                    DEFAULT_AS_SEEK_BAR_STATUS);
+            resAttrs.recycle();
+        }
+    }
 
-        this.chunkWidth = Graphics.dpToPx(context, 5);
-        this.chunkSpacing = Graphics.dpToPx(context, 2);
-        this.minChunkHeight = Graphics.dpToPx(context, 2);
-        this.waveColor = ContextCompat.getColor(context, R.color.tideProgress);
+    private void init(@NonNull Context context) {
+        this.sampler = Sampler.getInstance();
         this.scaledData = new byte[0];
-        this.expansionDuration = 400L;
-        this.isExpansionAnimated = true;
-        this.isTouchable = true;
         this.initialDelay = 50L;
         ValueAnimator valueAnimator = ValueAnimator.ofFloat(0.0F, 1.0F);
-        valueAnimator.setDuration(this.expansionDuration);
+        valueAnimator.setDuration(this.animateExpansionDuration);
         valueAnimator.setInterpolator(new OvershootInterpolator());
         valueAnimator.addUpdateListener(this);
         this.expansionAnimator = valueAnimator;
-        this.wavePaint = Graphics.getSmoothPaint(Graphics.withAlpha(waveColor,170));
-        this.waveFilledPaint = Graphics.getFilterPaint(this.waveColor);
+        this.wavePaint = Graphics.getSmoothPaint(Graphics.withAlpha(primaryColor,170));
+        this.waveFilledPaint = Graphics.getFilterPaint(this.primaryColor);
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        setMeasuredDimension(widthMeasureSpec, chunkMaxHeight);
     }
 
     @Nullable
     public OnProgressListener getOnProgressListener() {
-        return this.onProgressListener;
+        return onProgressListener;
     }
 
     public void setOnProgressListener(@Nullable OnProgressListener onProgressListener) {
         this.onProgressListener = onProgressListener;
     }
 
-    public int getChunkHeight() {
-        return this.chunkHeight == 0 ? this.height : Math.abs(this.chunkHeight);
+    public int getChunkMaxHeight() {
+        return chunkMaxHeight;
     }
 
-    public void setChunkHeight(int value) {
-        this.chunkHeight = value;
+    public void setChunkMaxHeight(@Dimension int height) {
+        chunkMaxHeight = Math.abs(height) >= getHeight() ? getHeight() : Math.abs(height);
         redrawData();
     }
 
     public int getChunkWidth() {
-        return this.chunkWidth;
+        return chunkWidth;
     }
 
-    public void setChunkWidth(int value) {
-        this.chunkWidth = Math.abs(value);
+    public void setChunkWidth(@Dimension int width) {
+        chunkWidth = Math.abs(width) >= getWidth() ? getWidth() : Math.abs(width);
         redrawData();
     }
 
     public int getChunkSpacing() {
-        return this.chunkSpacing;
+        return chunkSpacing;
     }
 
-    public void setChunkSpacing(int value) {
-        this.chunkSpacing = Math.abs(value);
+    public void setChunkSpacing(@Dimension int space) {
+        chunkSpacing = Math.abs(space) >= getWidth() ? getWidth() : Math.abs(space);
         redrawData();
     }
 
     public int getChunkRadius() {
-        return this.chunkRadius;
+        return chunkRadius;
     }
 
-    public void setChunkRadius(int value) {
-        this.chunkRadius = Math.abs(value);
+    public void setChunkRadius(@Dimension int value) {
+        chunkRadius = Math.abs(value);
         redrawData();
     }
 
-    public int getMinChunkHeight() {
-        return this.minChunkHeight;
+    public int getChunkMinHeight() {
+        return chunkMinHeight;
     }
 
-    public void setMinChunkHeight(int value) {
-        this.minChunkHeight = Math.abs(value);
+    public void setChunkMinHeight(@Dimension int value) {
+        chunkMinHeight = Math.abs(value);
         redrawData();
     }
 
-    public int getWaveColor() {
-        return this.waveColor;
+    public int getPrimaryColor() {
+        return primaryColor;
     }
 
-    public void setWaveColor(int value) {
-        this.wavePaint = Graphics.getSmoothPaint(Graphics.withAlpha(value, 170));
-        this.waveFilledPaint = Graphics.getFilterPaint(value);
+    public void setPrimaryColor(@ColorInt int color) {
+        primaryColor = color;
+        wavePaint = Graphics.getSmoothPaint(Graphics.withAlpha(color, DEFAULT_PRIMARY_COLOR_ALPHA));
+        waveFilledPaint = Graphics.getFilterPaint(color);
         redrawData();
     }
 
-    public float getProgress() {
-        return this.progress;
+    public int getMaxProgress() {
+        return maxProgress;
     }
 
-    public void setProgress(float value) {
-        if (value >= 0 && value <= 100) {
-            this.progress = Math.abs(value);
+    public void setMaxProgress(int maxProgress) {
+        this.maxProgress = Math.abs(maxProgress);
+    }
+
+    public int getProgress() {
+        return progress;
+    }
+
+    public void setProgress(int progress) {
+        if (progress >= 0 && progress <= maxProgress) {
+            this.progress = Math.abs(progress);
             if (onProgressListener != null) {
-                onProgressListener.onProgressChanged(this, this.progress, this.isTouched);
+                onProgressListener.onProgressChanged(this, this.progress, isTouched);
             }
             postInvalidate();
         }
@@ -197,50 +262,49 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
 
     @NonNull
     public byte[] getScaledData() {
-        return this.scaledData;
+        return scaledData;
     }
 
-    public void setScaledData(@NonNull byte[] value) {
-        this.scaledData = value.length <= this.getChunksCount() ? sampler.paste(new byte[this.getChunksCount()], value) : value;
+    public void setScaledData(@NonNull byte[] bytes) {
+        scaledData = bytes.length <= this.getChunksCount() ? sampler.paste(new byte[this.getChunksCount()], bytes) : bytes;
         redrawData();
     }
 
-    public long getExpansionDuration() {
-        return this.expansionDuration;
+    public long getAnimateExpansionDuration() {
+        return animateExpansionDuration;
     }
 
-    public final void setExpansionDuration(long value) {
-        this.expansionDuration = Math.max(400L, value);
-        ValueAnimator valueAnimator = this.expansionAnimator;
-        valueAnimator.setDuration(this.expansionDuration);
+    public void setAnimateExpansionDuration(long duration) {
+        animateExpansionDuration = Math.max(DEFAULT_ANIMATE_EXPANSION_DURATION, duration);
+        expansionAnimator.setDuration(animateExpansionDuration);
     }
 
-    public boolean isExpansionAnimated() {
-        return this.isExpansionAnimated;
+    public boolean getAnimateExpansion() {
+        return animateExpansion;
     }
 
-    public void setExpansionAnimated(boolean flag) {
-        this.isExpansionAnimated = flag;
+    public void setAnimateExpansion(boolean flag) {
+        animateExpansion = flag;
     }
 
-    public boolean isTouchable() {
-        return this.isTouchable;
+    public boolean getAsSeekBar() {
+        return asSeekBar;
     }
 
-    public void setTouchable(boolean flag) {
-        this.isTouchable = flag;
+    public void setAsSeekBar(boolean flag) {
+        asSeekBar = flag;
     }
 
-    public boolean isTouched() {
-        return this.isTouched;
+    public boolean getIsTouched() {
+        return isTouched;
     }
 
     public int getChunksCount() {
-        return this.width / this.getChunkStep();
+        return width / getChunkStep();
     }
 
     private int getChunkStep() {
-        return this.chunkWidth + this.chunkSpacing;
+        return chunkWidth + chunkSpacing;
     }
 
     private int getCenterY() {
@@ -248,7 +312,7 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     private float getProgressFactor() {
-        return this.progress / 100.0F;
+        return progress / (float) maxProgress;
     }
 
     protected void onDraw(Canvas canvas) {
@@ -285,7 +349,7 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     @SuppressLint({"ClickableViewAccessibility"})
     public boolean onTouchEvent(@Nullable MotionEvent event) {
         if (event != null) {
-            if (this.isTouchable && this.isEnabled()) {
+            if (this.asSeekBar && this.isEnabled()) {
                 switch(event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         this.isTouched = true;
@@ -323,7 +387,7 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
                     @Override
                     public void resultAsync(byte[] result) {
                         setScaledData(result);
-                        if (isExpansionAnimated()) {
+                        if (getAnimateExpansion()) {
                             animateExpansion();
                         }
                         if (callback != null) {
@@ -339,8 +403,8 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
         setRawData(raw, null);
     }
 
-    private float toProgress(@NonNull MotionEvent motionEvent) {
-        return Graphics.clamp(motionEvent.getX(), 0.0F, (float) this.width) / (float) this.width * 100.0F;
+    private int toProgress(@NonNull MotionEvent motionEvent) {
+        return (int) (Graphics.clamp(motionEvent.getX(), 0.0F, (float) getWidth()) / (float) this.width * maxProgress);
     }
 
     private void redrawData(Canvas canvas, float factor) {
@@ -348,15 +412,15 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
             Graphics.flush(this.waveBitmap);
             for (int i = 0; i < this.scaledData.length; ++i) {
                 byte b = this.scaledData[i];
-                int chunkHeight = (int) (((float) sampler.getAbs(b) / (float) Byte.MAX_VALUE) * getChunkHeight());
-                int clampedHeight = Math.max(chunkHeight, minChunkHeight);
-                float heightDiff = (float) (clampedHeight - minChunkHeight);
+                int chunkHeight = (int) (((float) sampler.getAbs(b) / (float) Byte.MAX_VALUE) * chunkMaxHeight);
+                int clampedHeight = Math.max(chunkHeight, chunkMinHeight);
+                float heightDiff = (float) (clampedHeight - chunkMinHeight);
                 int animatedDiff = (int) (heightDiff * factor);
 
                 RectF rectF = Graphics.rectFOf(chunkSpacing / 2f + i * getChunkStep(),
-                        getCenterY() - minChunkHeight - animatedDiff,
+                        getCenterY() - chunkMinHeight - animatedDiff,
                         chunkSpacing / 2f + i * getChunkStep() + chunkWidth,
-                        getCenterY() + minChunkHeight + animatedDiff);
+                        getCenterY() + chunkMinHeight + animatedDiff);
                 canvas.drawRoundRect(rectF, chunkRadius, chunkRadius, wavePaint);
             }
             postInvalidate();
@@ -372,22 +436,6 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
 
     private void animateExpansion() {
         this.expansionAnimator.start();
-    }
-
-    private void inflateAttrs(AttributeSet attrs) {
-        TypedArray resAttrs = getContext().getTheme().obtainStyledAttributes(attrs, R.styleable.TideView, 0, 0);
-        if (resAttrs != null) {
-            this.setChunkHeight(resAttrs.getDimensionPixelSize(R.styleable.TideView_chunkHeight, this.getChunkHeight()));
-            this.setChunkWidth(resAttrs.getDimensionPixelSize(R.styleable.TideView_chunkWidth, this.chunkWidth));
-            this.setChunkSpacing(resAttrs.getDimensionPixelSize(R.styleable.TideView_chunkSpacing, this.chunkSpacing));
-            this.setMinChunkHeight(resAttrs.getDimensionPixelSize(R.styleable.TideView_minChunkHeight, this.minChunkHeight));
-            this.setChunkRadius(resAttrs.getDimensionPixelSize(R.styleable.TideView_chunkRadius, this.chunkRadius));
-            this.isTouchable = resAttrs.getBoolean(R.styleable.TideView_touchable, this.isTouchable);
-            this.setWaveColor(resAttrs.getColor(R.styleable.TideView_waveColor, this.waveColor));
-            this.setProgress(resAttrs.getFloat(R.styleable.TideView_progress, this.progress));
-            this.isExpansionAnimated = resAttrs.getBoolean(R.styleable.TideView_animateExpansion, this.isExpansionAnimated);
-            resAttrs.recycle();
-        }
     }
 
     @Override

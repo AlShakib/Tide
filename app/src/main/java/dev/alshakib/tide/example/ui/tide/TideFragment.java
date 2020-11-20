@@ -32,6 +32,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.SeekBar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -42,11 +43,12 @@ import androidx.navigation.fragment.NavHostFragment;
 import java.io.IOException;
 import java.io.InputStream;
 
+import dev.alshakib.tide.TideView;
 import dev.alshakib.tide.example.data.model.Music;
 import dev.alshakib.tide.example.databinding.FragmentTideBinding;
 import dev.alshakib.tide.example.extension.AndroidExt;
 
-public class TideFragment extends Fragment {
+public class TideFragment extends Fragment implements TideView.OnProgressListener {
     private static final String LOG_TAG = TideFragment.class.getSimpleName();
 
     private FragmentTideBinding viewBinding;
@@ -76,7 +78,30 @@ public class TideFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         navController = NavHostFragment.findNavController(this);
         AndroidExt.setActionBarTitle(requireActivity(), music.getTitle());
+        viewBinding.tideView.setOnProgressListener(this);
         viewBinding.tideView.setRawData(getByteArray(music.getPath()));
+        viewBinding.tideView.setMaxProgress(1000);
+        viewBinding.progressMax.setText("Max: " + viewBinding.tideView.getMaxProgress());
+
+        viewBinding.seekBar.setMax(viewBinding.tideView.getMaxProgress());
+        viewBinding.seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    viewBinding.tideView.setProgress(progress);
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
     }
 
     private byte[] getByteArray(String path) {
@@ -91,5 +116,23 @@ public class TideFragment extends Fragment {
             e.printStackTrace();
         }
         return new byte[0];
+    }
+
+    @Override
+    public void onStartTracking(@NonNull TideView tideView, float progress) {
+
+    }
+
+    @Override
+    public void onStopTracking(@NonNull TideView tideView, float progress) {
+
+    }
+
+    @Override
+    public void onProgressChanged(@NonNull TideView tideView, float progress, boolean fromUser) {
+        viewBinding.progress.setText("Progress: " + progress);
+        if (fromUser) {
+            viewBinding.seekBar.setProgress((int) progress);
+        }
     }
 }

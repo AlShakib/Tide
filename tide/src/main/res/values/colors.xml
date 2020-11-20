@@ -26,6 +26,5 @@
   -->
 
 <resources>
-    <color name="tideProgress">#388E3C</color>
-    <color name="tideBackground">#99000000</color>
+    <color name="primary">#388E3C</color>
 </resources>

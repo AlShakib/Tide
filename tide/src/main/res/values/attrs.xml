@@ -27,14 +27,16 @@
 
 <resources>
     <declare-styleable name="TideView">
-        <attr format="color" name="waveColor"/>
-        <attr format="dimension" name="chunkWidth"/>
-        <attr format="dimension" name="chunkHeight"/>
-        <attr format="dimension" name="minChunkHeight"/>
-        <attr format="dimension" name="chunkRadius"/>
-        <attr format="dimension" name="chunkSpacing"/>
-        <attr format="float" name="progress"/>
-        <attr format="boolean" name="animateExpansion"/>
-        <attr format="boolean" name="touchable"/>
+        <attr name="tidePrimaryColor" format="color"/>
+        <attr name="tideChunkWidth" format="dimension"/>
+        <attr name="tideChunkMaxHeight" format="dimension"/>
+        <attr name="tideChunkMinHeight" format="dimension"/>
+        <attr name="tideChunkRadius" format="dimension"/>
+        <attr name="tideChunkSpacing" format="dimension"/>
+        <attr name="tideMaxProgress" format="integer"/>
+        <attr name="tideProgress" format="integer"/>
+        <attr name="tideAnimateExpansionDuration" format="integer"/>
+        <attr name="tideAnimateExpansion" format="boolean"/>
+        <attr name="tideAsSeekBar" format="boolean"/>
     </declare-styleable>
 </resources>
