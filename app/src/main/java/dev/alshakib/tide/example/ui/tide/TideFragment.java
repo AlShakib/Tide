@@ -48,7 +48,7 @@ import dev.alshakib.tide.example.data.model.Music;
 import dev.alshakib.tide.example.databinding.FragmentTideBinding;
 import dev.alshakib.tide.example.extension.AndroidExt;
 
-public class TideFragment extends Fragment implements TideView.OnProgressListener {
+public class TideFragment extends Fragment {
     private static final String LOG_TAG = TideFragment.class.getSimpleName();
 
     private FragmentTideBinding viewBinding;
@@ -78,12 +78,28 @@ public class TideFragment extends Fragment implements TideView.OnProgressListene
         super.onViewCreated(view, savedInstanceState);
         navController = NavHostFragment.findNavController(this);
         AndroidExt.setActionBarTitle(requireActivity(), music.getTitle());
-        viewBinding.tideView.setOnProgressListener(this);
         viewBinding.tideView.setRawData(getByteArray(music.getPath()));
         viewBinding.tideView.setMaxProgress(1000);
         viewBinding.progressMax.setText("Max: " + viewBinding.tideView.getMaxProgress());
-
         viewBinding.seekBar.setMax(viewBinding.tideView.getMaxProgress());
+
+        viewBinding.tideView.setOnTideViewChangeListener(new TideView.OnTideViewChangeListener() {
+            @Override
+            public void onProgressChanged(@NonNull TideView tideView, int progress, boolean fromUser) {
+                viewBinding.progress.setText("Progress: " + progress);
+                viewBinding.seekBar.setProgress(progress);
+            }
+
+            @Override
+            public void onStartTrackingTouch(@NonNull TideView tideView) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(@NonNull TideView tideView) {
+
+            }
+        });
         viewBinding.seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -116,23 +132,5 @@ public class TideFragment extends Fragment implements TideView.OnProgressListene
             e.printStackTrace();
         }
         return new byte[0];
-    }
-
-    @Override
-    public void onStartTracking(@NonNull TideView tideView, int progress) {
-
-    }
-
-    @Override
-    public void onStopTracking(@NonNull TideView tideView, int progress) {
-
-    }
-
-    @Override
-    public void onProgressChanged(@NonNull TideView tideView, int progress, boolean fromUser) {
-        viewBinding.progress.setText("Progress: " + progress);
-        if (fromUser) {
-            viewBinding.seekBar.setProgress(progress);
-        }
     }
 }

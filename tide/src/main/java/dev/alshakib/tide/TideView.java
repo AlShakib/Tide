@@ -61,7 +61,7 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     private static final boolean DEFAULT_AS_SEEK_BAR_STATUS = true;
     private static final int DEFAULT_PRIMARY_COLOR_ALPHA = 170;
 
-    private OnProgressListener onProgressListener;
+    private OnTideViewChangeListener onTideViewChangeListener;
     private Sampler sampler;
 
     private int primaryColor;
@@ -172,12 +172,12 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     @Nullable
-    public OnProgressListener getOnProgressListener() {
-        return onProgressListener;
+    public OnTideViewChangeListener getOnTideViewChangeListener() {
+        return onTideViewChangeListener;
     }
 
-    public void setOnProgressListener(@Nullable OnProgressListener onProgressListener) {
-        this.onProgressListener = onProgressListener;
+    public void setOnTideViewChangeListener(@Nullable OnTideViewChangeListener onTideViewChangeListener) {
+        this.onTideViewChangeListener = onTideViewChangeListener;
     }
 
     public int getChunkMaxHeight() {
@@ -251,8 +251,8 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     public void setProgress(int progress) {
         if (progress >= 0 && progress <= maxProgress) {
             this.progress = Math.abs(progress);
-            if (onProgressListener != null) {
-                onProgressListener.onProgressChanged(this, this.progress, isTouched);
+            if (onTideViewChangeListener != null) {
+                onTideViewChangeListener.onProgressChanged(this, this.progress, isTouched);
             }
             postInvalidate();
         }
@@ -350,14 +350,14 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
                     case MotionEvent.ACTION_DOWN:
                         isTouched = true;
                         setProgress(toProgress(event));
-                        if (onProgressListener != null) {
-                            onProgressListener.onStartTracking(this, progress);
+                        if (onTideViewChangeListener != null) {
+                            onTideViewChangeListener.onStartTrackingTouch(this);
                         }
                         return true;
                     case MotionEvent.ACTION_UP:
                         isTouched = false;
-                        if (onProgressListener != null) {
-                            onProgressListener.onStopTracking(this, progress);
+                        if (onTideViewChangeListener != null) {
+                            onTideViewChangeListener.onStopTrackingTouch(this);
                         }
                         return false;
                     case MotionEvent.ACTION_MOVE:
@@ -437,10 +437,10 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
         redrawData(Graphics.inCanvas(waveBitmap), valueAnimator.getAnimatedFraction());
     }
 
-    public interface OnProgressListener {
-        void onStartTracking(@NonNull TideView tideView, int progress);
-        void onStopTracking(@NonNull TideView tideView, int progress);
+    public interface OnTideViewChangeListener {
         void onProgressChanged(@NonNull TideView tideView, int progress, boolean fromUser);
+        void onStartTrackingTouch(@NonNull TideView tideView);
+        void onStopTrackingTouch(@NonNull TideView tideView);
     }
 
     public interface OnSamplingListener {
