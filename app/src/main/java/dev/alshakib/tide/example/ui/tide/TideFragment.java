@@ -119,20 +119,20 @@ public class TideFragment extends Fragment implements TideView.OnProgressListene
     }
 
     @Override
-    public void onStartTracking(@NonNull TideView tideView, float progress) {
+    public void onStartTracking(@NonNull TideView tideView, int progress) {
 
     }
 
     @Override
-    public void onStopTracking(@NonNull TideView tideView, float progress) {
+    public void onStopTracking(@NonNull TideView tideView, int progress) {
 
     }
 
     @Override
-    public void onProgressChanged(@NonNull TideView tideView, float progress, boolean fromUser) {
+    public void onProgressChanged(@NonNull TideView tideView, int progress, boolean fromUser) {
         viewBinding.progress.setText("Progress: " + progress);
         if (fromUser) {
-            viewBinding.seekBar.setProgress((int) progress);
+            viewBinding.seekBar.setProgress(progress);
         }
     }
 }
