@@ -31,17 +31,22 @@ import android.os.Looper;
 
 import androidx.annotation.NonNull;
 
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 class Sampler {
     private static final String LOG_TAG = Sampler.class.getSimpleName();
-    public static final Handler MAIN_THREAD = new Handler(Looper.getMainLooper());
-    public static final ExecutorService SAMPLER_THREAD = Executors.newSingleThreadExecutor();
+    private static final Handler MAIN_THREAD = new Handler(Looper.getMainLooper());
+    private static final ExecutorService SAMPLER_THREAD = Executors.newSingleThreadExecutor();
 
     private static volatile Sampler INSTANCE;
 
-    public Sampler() { }
+    private final Random random;
+
+    public Sampler() {
+        this.random = new Random();
+    }
 
     public Handler getMainThread() {
         return MAIN_THREAD;
@@ -51,82 +56,80 @@ class Sampler {
         return SAMPLER_THREAD;
     }
 
-    public byte getAbs(byte b) {
-        byte result;
-        if (b == -128) {
-            result = 127;
-        } else {
-            if (0 >= b) {
-                result = (byte) (-b);
-                return result;
-            }
-            result = b;
+    public byte getAbsByte(byte b) {
+        if (b == Byte.MIN_VALUE) {
+            return Byte.MAX_VALUE;
+        } else if (b < 0) {
+            return (byte) (-b);
         }
-        return result;
+        return b;
     }
 
     @NonNull
-    public byte[] paste(@NonNull byte[] bytes, @NonNull byte[] other) {
+    public byte[] paste(@NonNull byte[] bytes, @NonNull byte[] from) {
         if (bytes.length == 0) {
             return new byte[0];
-        } else {
-            int index = 0;
-            for(int i = 0; i < bytes.length; ++i) {
-                int currentIndex = index++;
-                byte b;
-                if (currentIndex >= 0 && currentIndex < other.length) {
-                    b = other[currentIndex];
-                } else {
-                    b = getAbs(bytes[currentIndex]);
-                }
-                bytes[currentIndex] = b;
-            }
-            return bytes;
         }
+        for(int i = 0; i < bytes.length; ++i) {
+            if (i < from.length) {
+                bytes[i] = from[i];
+            } else {
+                bytes[i] = getAbsByte(bytes[i]);
+            }
+        }
+        return bytes;
     }
 
-    public void downSampleAsync(@NonNull final byte[] data, final int targetSize,
-                                @NonNull final OnSamplerListener onSamplerListener) {
+    public byte[] getSample(byte[] bytes, int chunkCount) {
+        if (chunkCount <= 1) {
+            return new byte[0];
+        }
+        byte[] sample = new byte[chunkCount];
+        int maxSampleIndex = chunkCount - 1;
+        if (chunkCount >= bytes.length) {
+            return paste(sample, bytes);
+        }
+        int step = Math.abs(bytes.length / maxSampleIndex);
+        int index = 0;
+        for (int i = 0; i <= bytes.length; i += step) {
+            float absByte = getAbsByte(bytes[i]);
+            if (index < maxSampleIndex) {
+                absByte += getAbsByte(bytes[i + (step / 5)]);
+                absByte += getAbsByte(bytes[i + (step / 5)]);
+                absByte += getAbsByte(bytes[i + (step / 5)]);
+                absByte += getAbsByte(bytes[i + (step / 5)]);
+                absByte = absByte / 5.0F;
+            }
+            if (absByte == 0) {
+                absByte = getRandomByte();
+            }
+            sample[index] = (byte) absByte;
+            ++index;
+        }
+        return sample;
+    }
+
+    // Dirty hack to fill 0 byte with sample data
+    private float getRandomByte() {
+        return random.nextInt(Byte.MAX_VALUE - 1);
+    }
+
+    public void getSampleAsync(@NonNull final byte[] data, final int targetSize,
+                               @NonNull final OnResultCallback onResultCallback) {
         getSamplerThread().submit(new Runnable() {
 
             @Override
             public void run() {
-                final byte[] scaled = downSample(data, targetSize);
+                final byte[] sample = getSample(data, targetSize);
                 getMainThread().post(new Runnable() {
 
                     @Override
                     public void run() {
-                        onSamplerListener.resultAsync(scaled);
+                        onResultCallback.onResult(sample);
                     }
                 });
             }
         });
-    }
-
-    private byte[] downSample(byte[] data, int targetSize) {
-        byte[] targetSized = new byte[targetSize];
-        int chunkSize = data.length / targetSize;
-        int chunkStep = (int) Math.max(Math.floor(chunkSize/ 10.f ), 1.0);
-        int prevDataIndex = 0;
-        float sampledPerChunk = 0f;
-        float sumPerChunk = 0f;
-
-        if (targetSize >= data.length) {
-            return paste(targetSized, data);
-        }
-        for (int i = 0; i <= data.length; i += chunkStep) {
-            int currentDataIndex = targetSize * i / data.length;
-            if (prevDataIndex == currentDataIndex) {
-                sampledPerChunk += 1;
-                sumPerChunk += getAbs(data[i]);
-            } else {
-                targetSized[prevDataIndex] = (byte) (sumPerChunk / sampledPerChunk);
-                sumPerChunk = 0f;
-                sampledPerChunk = 0f;
-                prevDataIndex = currentDataIndex;
-            }
-        }
-        return targetSized;
     }
 
     public static Sampler getInstance() {
@@ -140,8 +143,7 @@ class Sampler {
         return INSTANCE;
     }
 
-
-    public interface OnSamplerListener {
-        void resultAsync(byte[] result);
+    public interface OnResultCallback {
+        void onResult(byte[] result);
     }
 }

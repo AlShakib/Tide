@@ -52,10 +52,10 @@ import androidx.core.graphics.ColorUtils;
 public class TideView extends View implements ValueAnimator.AnimatorUpdateListener {
     private static final String LOG_TAG = TideView.class.getSimpleName();
 
-    private static final int DEFAULT_CHUNK_WIDTH_DP = 4;
+    private static final int DEFAULT_CHUNK_WIDTH_DP = 3;
     private static final int DEFAULT_CHUNK_MAX_HEIGHT_DP = 56;
-    private static final int DEFAULT_CHUNK_MIN_HEIGHT_DP = 8;
-    private static final int DEFAULT_CHUNK_SPACING_DP = 2;
+    private static final int DEFAULT_CHUNK_MIN_HEIGHT_DP = 1;
+    private static final int DEFAULT_CHUNK_SPACING_DP = 1;
     private static final int DEFAULT_CHUNK_RADIUS_DP = 2;
     private static final int DEFAULT_MAX_PROGRESS = 100;
     private static final int DEFAULT_PROGRESS = 0;
@@ -297,10 +297,10 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     public int getChunksCount() {
-        return getWidth() / getChunkStep();
+        return getWidth() / getChunkStepWidth();
     }
 
-    private int getChunkStep() {
+    private int getChunkStepWidth() {
         return chunkWidth + chunkSpacing;
     }
 
@@ -313,12 +313,12 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     public void setRawData(@NonNull final byte[] raw, final @Nullable OnSamplingListener callback) {
-        Sampler.MAIN_THREAD.postDelayed(new Runnable() {
+        sampler.getMainThread().postDelayed(new Runnable() {
             @Override
             public void run() {
-                sampler.downSampleAsync(raw, getChunksCount(), new Sampler.OnSamplerListener() {
+                sampler.getSampleAsync(raw, getChunksCount(), new Sampler.OnResultCallback() {
                     @Override
-                    public void resultAsync(byte[] result) {
+                    public void onResult(byte[] result) {
                         setScaledData(result);
                         if (getAnimateExpansion()) {
                             animateExpansion();
@@ -426,9 +426,9 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
                 int clampedHeight = Math.max(chunkHeight, chunkMinHeight);
                 float heightDiff = (float) (clampedHeight - chunkMinHeight);
                 int animatedDiff = (int) (heightDiff * factor);
-                RectF rectF = new RectF(chunkSpacing / 2F + i * getChunkStep(),
+                RectF rectF = new RectF(chunkSpacing / 2F + i * getChunkStepWidth(),
                         getCenterY() - chunkMinHeight - animatedDiff,
-                        chunkSpacing / 2F + i * getChunkStep() + chunkWidth,
+                        chunkSpacing / 2F + i * getChunkStepWidth() + chunkWidth,
                         getCenterY() + chunkMinHeight + animatedDiff);
                 canvas.drawRoundRect(rectF, chunkRadius, chunkRadius, wavePaint);
             }
