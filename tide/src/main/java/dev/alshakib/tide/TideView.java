@@ -33,6 +33,8 @@ import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -45,6 +47,7 @@ import androidx.annotation.Dimension;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.ColorUtils;
 
 public class TideView extends View implements ValueAnimator.AnimatorUpdateListener {
     private static final String LOG_TAG = TideView.class.getSimpleName();
@@ -60,6 +63,9 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     private static final boolean DEFAULT_ANIMATE_EXPANSION_STATUS = true;
     private static final boolean DEFAULT_AS_SEEK_BAR_STATUS = true;
     private static final int DEFAULT_PRIMARY_COLOR_ALPHA = 170;
+
+    private static final float VALUE_ANIMATOR_FROM = 0.0F;
+    private static final float VALUE_ANIMATOR_TO = 1.0F;
 
     private OnTideViewChangeListener onTideViewChangeListener;
     private Sampler sampler;
@@ -98,7 +104,7 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
         super(context, attrs);
         setWillNotDraw(false);
         if (context != null && attrs != null) {
-            inflateAttrs(attrs, context);
+            inflateAttrs(context, attrs);
             init(context);
         }
     }
@@ -107,7 +113,7 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
         super(context, attrs, defStyleAttr);
         setWillNotDraw(false);
         if (context != null && attrs != null) {
-            inflateAttrs(attrs, context);
+            inflateAttrs(context, attrs);
             init(context);
         }
     }
@@ -116,13 +122,14 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
         super(context, attrs, defStyleAttr, defStyleRes);
         setWillNotDraw(false);
         if (context != null && attrs != null) {
-            inflateAttrs(attrs, context);
+            inflateAttrs(context, attrs);
             init(context);
         }
     }
 
-    private void inflateAttrs(@NonNull AttributeSet attrs, @NonNull Context context) {
-        TypedArray resAttrs = getContext().getTheme().obtainStyledAttributes(attrs, R.styleable.TideView, 0, 0);
+    private void inflateAttrs(@NonNull Context context, @NonNull AttributeSet attrs) {
+        TypedArray resAttrs = getContext().getTheme()
+                .obtainStyledAttributes(attrs, R.styleable.TideView, 0, 0);
         if (resAttrs != null) {
             primaryColor = resAttrs.getColor(R.styleable.TideView_tidePrimaryColor,
                     ContextCompat.getColor(context,R.color.primary));
@@ -154,21 +161,13 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
         this.sampler = Sampler.getInstance();
         this.scaledData = new byte[0];
         this.initialDelay = 50L;
-        ValueAnimator valueAnimator = ValueAnimator.ofFloat(0.0F, 1.0F);
+        ValueAnimator valueAnimator = ValueAnimator.ofFloat(VALUE_ANIMATOR_FROM, VALUE_ANIMATOR_TO);
         valueAnimator.setDuration(animateExpansionDuration);
         valueAnimator.setInterpolator(new OvershootInterpolator());
         valueAnimator.addUpdateListener(this);
         this.expansionAnimator = valueAnimator;
-        this.wavePaint = Graphics.getSmoothPaint(Graphics.withAlpha(primaryColor, DEFAULT_PRIMARY_COLOR_ALPHA));
-        this.waveFilledPaint = Graphics.getFilterPaint(this.primaryColor);
-    }
-
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        if (getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT) {
-            setMeasuredDimension(widthMeasureSpec, chunkMaxHeight);
-        }
+        this.wavePaint = getSmoothPaint(ColorUtils.setAlphaComponent(primaryColor, TideView.DEFAULT_PRIMARY_COLOR_ALPHA));
+        this.waveFilledPaint = getFilterPaint(this.primaryColor);
     }
 
     @Nullable
@@ -231,8 +230,8 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
 
     public void setPrimaryColor(@ColorInt int color) {
         primaryColor = color;
-        wavePaint = Graphics.getSmoothPaint(Graphics.withAlpha(color, DEFAULT_PRIMARY_COLOR_ALPHA));
-        waveFilledPaint = Graphics.getFilterPaint(color);
+        wavePaint = getSmoothPaint(ColorUtils.setAlphaComponent(color, TideView.DEFAULT_PRIMARY_COLOR_ALPHA));
+        waveFilledPaint = getFilterPaint(color);
         redrawData();
     }
 
@@ -313,11 +312,36 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
         return progress / (float) maxProgress;
     }
 
+    public void setRawData(@NonNull final byte[] raw, final @Nullable OnSamplingListener callback) {
+        Sampler.MAIN_THREAD.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                sampler.downSampleAsync(raw, getChunksCount(), new Sampler.OnSamplerListener() {
+                    @Override
+                    public void resultAsync(byte[] result) {
+                        setScaledData(result);
+                        if (getAnimateExpansion()) {
+                            animateExpansion();
+                        }
+                        if (callback != null) {
+                            callback.onComplete();
+                        }
+                    }
+                });
+            }
+        }, initialDelay);
+    }
+
+    public void setRawData(@NonNull final byte[] raw) {
+        setRawData(raw, null);
+    }
+
+    @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (canvas != null) {
             canvas.save();
-            canvas.clipRect(0, 0, getWidth(), getHeight());
+            canvas.clipRect(0.0F, 0.0F, (float) getWidth(), (float) getHeight());
             canvas.drawBitmap(waveBitmap, 0.0F, 0.0F, wavePaint);
             canvas.restore();
             canvas.save();
@@ -328,10 +352,11 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     @SuppressLint({"DrawAllocation"})
+    @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        if (!Graphics.fits(this.waveBitmap, getWidth(), getHeight())) {
+        if (!isBitmapFits(this.waveBitmap, getWidth(), getHeight())) {
             if (changed) {
-                Graphics.safeRecycle(this.waveBitmap);
+                safeRecycle(this.waveBitmap);
                 this.waveBitmap = Bitmap.createBitmap(getWidth(), getHeight(), Bitmap.Config.ARGB_8888);
                 if (this.scaledData.length == 0) {
                     this.setScaledData(new byte[0]);
@@ -343,6 +368,7 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     @SuppressLint({"ClickableViewAccessibility"})
+    @Override
     public boolean onTouchEvent(@Nullable MotionEvent event) {
         if (event != null) {
             if (asSeekBar && isEnabled()) {
@@ -372,48 +398,37 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
                 return false;
             }
         }
-        return super.onTouchEvent(event);
+        return super.onTouchEvent(null);
     }
 
-    public void setRawData(@NonNull final byte[] raw, final @Nullable OnSamplingListener callback) {
-        Sampler.MAIN_THREAD.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                sampler.downSampleAsync(raw, getChunksCount(), new Sampler.OnSamplerListener() {
-                    @Override
-                    public void resultAsync(byte[] result) {
-                        setScaledData(result);
-                        if (getAnimateExpansion()) {
-                            animateExpansion();
-                        }
-                        if (callback != null) {
-                            callback.onComplete();
-                        }
-                    }
-                });
-            }
-        }, initialDelay);
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        if (getLayoutParams().height == ViewGroup.LayoutParams.WRAP_CONTENT) {
+            setMeasuredDimension(widthMeasureSpec, chunkMaxHeight);
+        }
     }
 
-    public final void setRawData(@NonNull final byte[] raw) {
-        setRawData(raw, null);
+    @Override
+    public void onAnimationUpdate(ValueAnimator valueAnimator) {
+        redrawData(new Canvas(waveBitmap), valueAnimator.getAnimatedFraction());
     }
 
     private int toProgress(@NonNull MotionEvent motionEvent) {
-        return (int) (Graphics.clamp(motionEvent.getX(), 0.0F, (float) getWidth()) / (float) getWidth() * maxProgress);
+        return (int) (Math.min(motionEvent.getX(), Math.max((float) getWidth(), (float) 0.0)) / (float) getWidth() * maxProgress);
     }
 
     private void redrawData(Canvas canvas, float factor) {
         if (this.waveBitmap != null) {
-            Graphics.flush(this.waveBitmap);
+            safeEraseColor(this.waveBitmap);
             for (int i = 0; i < this.scaledData.length; ++i) {
-                int chunkHeight = (int) ( (float) scaledData[i] / (float) Byte.MAX_VALUE * (chunkMaxHeight / 2));
+                int chunkHeight = (int) ((float) scaledData[i] / (float) Byte.MAX_VALUE * (chunkMaxHeight / 2.0F));
                 int clampedHeight = Math.max(chunkHeight, chunkMinHeight);
                 float heightDiff = (float) (clampedHeight - chunkMinHeight);
                 int animatedDiff = (int) (heightDiff * factor);
-                RectF rectF = Graphics.rectFOf(chunkSpacing / 2f + i * getChunkStep(),
+                RectF rectF = new RectF(chunkSpacing / 2F + i * getChunkStep(),
                         getCenterY() - chunkMinHeight - animatedDiff,
-                        chunkSpacing / 2f + i * getChunkStep() + chunkWidth,
+                        chunkSpacing / 2F + i * getChunkStep() + chunkWidth,
                         getCenterY() + chunkMinHeight + animatedDiff);
                 canvas.drawRoundRect(rectF, chunkRadius, chunkRadius, wavePaint);
             }
@@ -423,8 +438,8 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
 
     private void redrawData() {
         if (waveBitmap != null) {
-            Canvas canvas = Graphics.inCanvas(waveBitmap);
-            redrawData(canvas, 1.0F);
+            Canvas canvas = new Canvas(waveBitmap);
+            redrawData(canvas, VALUE_ANIMATOR_TO);
         }
     }
 
@@ -432,9 +447,39 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
         this.expansionAnimator.start();
     }
 
-    @Override
-    public void onAnimationUpdate(ValueAnimator valueAnimator) {
-        redrawData(Graphics.inCanvas(waveBitmap), valueAnimator.getAnimatedFraction());
+    @NonNull
+    private Paint getSmoothPaint(@ColorInt int color) {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setColor(color);
+        return paint;
+    }
+
+    @NonNull
+    private Paint getFilterPaint(@ColorInt int color) {
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_ATOP));
+        return paint;
+    }
+
+    private void safeRecycle(@Nullable Bitmap bitmap) {
+        if (bitmap != null && !bitmap.isRecycled()) {
+            bitmap.recycle();
+        }
+    }
+
+    private void safeEraseColor(@Nullable Bitmap bitmap) {
+        if (bitmap != null) {
+            bitmap.eraseColor(0);
+        }
+    }
+
+    private boolean isBitmapFits(@Nullable Bitmap bitmap, int width, int height) {
+        if (bitmap != null) {
+            return bitmap.getHeight() == height && bitmap.getWidth() == width;
+        }
+        return false;
     }
 
     public interface OnTideViewChangeListener {

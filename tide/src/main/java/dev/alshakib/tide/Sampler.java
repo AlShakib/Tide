@@ -34,7 +34,7 @@ import androidx.annotation.NonNull;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class Sampler {
+class Sampler {
     private static final String LOG_TAG = Sampler.class.getSimpleName();
     public static final Handler MAIN_THREAD = new Handler(Looper.getMainLooper());
     public static final ExecutorService SAMPLER_THREAD = Executors.newSingleThreadExecutor();

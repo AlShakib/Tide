@@ -32,10 +32,9 @@ import android.content.res.Resources;
 import androidx.annotation.Dimension;
 import androidx.annotation.NonNull;
 
-public class AndroidExt {
+class AndroidExt {
     public static int dpToPx(@NonNull Context context, @Dimension int value) {
         Resources resources = context.getResources();
         return (int) (value * resources.getDisplayMetrics().density);
     }
-
 }
