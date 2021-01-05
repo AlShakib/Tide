@@ -89,21 +89,23 @@ class Sampler {
             return paste(sample, bytes);
         }
         int step = Math.abs(bytes.length / maxSampleIndex);
-        int index = 0;
-        for (int i = 0; i <= bytes.length; i += step) {
-            float absByte = getAbsByte(bytes[i]);
+        for (int i = 0; i < chunkCount; ++i) {
+            int index = i + step;
+            if (index >= bytes.length) {
+                index = bytes.length;
+            }
+            float absByte = getAbsByte(bytes[index]);
             if (index < maxSampleIndex) {
-                absByte += getAbsByte(bytes[i + (step / 5)]);
-                absByte += getAbsByte(bytes[i + (step / 5)]);
-                absByte += getAbsByte(bytes[i + (step / 5)]);
-                absByte += getAbsByte(bytes[i + (step / 5)]);
+                absByte += getAbsByte(bytes[index + (step / 5)]);
+                absByte += getAbsByte(bytes[index + (step / 5)]);
+                absByte += getAbsByte(bytes[index + (step / 5)]);
+                absByte += getAbsByte(bytes[index + (step / 5)]);
                 absByte = absByte / 5.0F;
             }
-            if (absByte == 0) {
+            if (absByte < 30) {
                 absByte = getRandomByte();
             }
-            sample[index] = (byte) absByte;
-            ++index;
+            sample[i] = (byte) absByte;
         }
         return sample;
     }

@@ -26,8 +26,8 @@
 
 buildscript {
     ext {
-        tide_version = "1.0.0-alpha4"
-        tide_version_code = 2
+        tide_version = "1.0.0-alpha5"
+        tide_version_code = 1
     }
     repositories {
         google()
