@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Al Shakib (shakib@alshakib.dev)
+ * Copyright (c) 2021 Al Shakib (shakib@alshakib.dev)
  *
  * This file is part of Tide
  *
@@ -26,7 +26,6 @@
 
 package dev.alshakib.tide.example.adapter;
 
-import android.content.Context;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
@@ -40,8 +39,8 @@ import dev.alshakib.tide.example.data.model.Music;
 
 public class MusicListAdapterCompat extends ListAdapterCompat<Music, MusicViewHolderCompat> {
 
-    public MusicListAdapterCompat(@NonNull Context context) {
-        super(context, new AsyncDifferConfig.Builder<>(new MusicDiffUtilItemCallback()).build());
+    public MusicListAdapterCompat() {
+        super(new AsyncDifferConfig.Builder<>(new MusicDiffUtilItemCallback()).build());
     }
 
     @NonNull

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Al Shakib (shakib@alshakib.dev)
+ * Copyright (c) 2021 Al Shakib (shakib@alshakib.dev)
  *
  * This file is part of Tide
  *
@@ -50,8 +50,6 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 
 public class TideView extends View implements ValueAnimator.AnimatorUpdateListener {
-    private static final String LOG_TAG = TideView.class.getSimpleName();
-
     private static final int DEFAULT_CHUNK_WIDTH_DP = 3;
     private static final int DEFAULT_CHUNK_MAX_HEIGHT_DP = 56;
     private static final int DEFAULT_CHUNK_MIN_HEIGHT_DP = 1;

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Al Shakib (shakib@alshakib.dev)
+ * Copyright (c) 2021 Al Shakib (shakib@alshakib.dev)
  *
  * This file is part of Tide
  *
@@ -65,7 +65,7 @@ public class MusicListFragment extends Fragment implements ViewHolderCompat.OnIt
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         musicListViewModel = new ViewModelProvider(this).get(MusicListViewModel.class);
-        musicListAdapterCompat = new MusicListAdapterCompat(requireContext());
+        musicListAdapterCompat = new MusicListAdapterCompat();
         musicListAdapterCompat.setOnItemClickListener(this);
     }
 

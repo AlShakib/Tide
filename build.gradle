@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Al Shakib (shakib@alshakib.dev)
+ * Copyright (c) 2021 Al Shakib (shakib@alshakib.dev)
  *
  * This file is part of Tide
  *
@@ -24,11 +24,10 @@
  * SOFTWARE.
  */
 
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
 buildscript {
     ext {
-        tide_version = "1.0.0-alpha3"
-        tide_version_code = 1
+        tide_version = "1.0.0-alpha4"
+        tide_version_code = 2
     }
     repositories {
         google()
@@ -36,13 +35,10 @@ buildscript {
     }
     dependencies {
         classpath "com.android.tools.build:gradle:4.1.1"
-        classpath "androidx.navigation:navigation-safe-args-gradle-plugin:2.3.1"
+        classpath "androidx.navigation:navigation-safe-args-gradle-plugin:2.3.2"
 
         classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5'
         classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
-
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
     }
 }
 

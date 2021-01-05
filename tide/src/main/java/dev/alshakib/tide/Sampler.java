@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Al Shakib (shakib@alshakib.dev)
+ * Copyright (c) 2021 Al Shakib (shakib@alshakib.dev)
  *
  * This file is part of Tide
  *
@@ -36,7 +36,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 class Sampler {
-    private static final String LOG_TAG = Sampler.class.getSimpleName();
     private static final Handler MAIN_THREAD = new Handler(Looper.getMainLooper());
     private static final ExecutorService SAMPLER_THREAD = Executors.newSingleThreadExecutor();
 
