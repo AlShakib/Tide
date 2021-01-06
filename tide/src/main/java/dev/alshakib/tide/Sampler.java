@@ -84,35 +84,40 @@ class Sampler {
             return new byte[0];
         }
         byte[] sample = new byte[chunkCount];
-        int maxSampleIndex = chunkCount - 1;
         if (chunkCount >= bytes.length) {
             return paste(sample, bytes);
         }
-        int step = Math.abs(bytes.length / maxSampleIndex);
+        int step = Math.abs((bytes.length - 1) / (chunkCount - 1));
         for (int i = 0; i < chunkCount; ++i) {
-            int index = i + step;
-            if (index >= bytes.length) {
-                index = bytes.length;
+            if (i == 0) {
+                sample[i] = getAbsByte(bytes, i, step / 2);
+            } else if (i == chunkCount - 1) {
+                sample[i] = getAbsByte(bytes, (bytes.length - 1) - (step / 2), bytes.length - 1);
+            } else {
+                sample[i] = getAbsByte(bytes, (i * step) - (step / 2), (i * step) + (step / 2));
             }
-            float absByte = getAbsByte(bytes[index]);
-            if (index < maxSampleIndex) {
-                absByte += getAbsByte(bytes[index + (step / 5)]);
-                absByte += getAbsByte(bytes[index + (step / 5)]);
-                absByte += getAbsByte(bytes[index + (step / 5)]);
-                absByte += getAbsByte(bytes[index + (step / 5)]);
-                absByte = absByte / 5.0F;
-            }
-            if (absByte < 30) {
-                absByte = getRandomByte();
-            }
-            sample[i] = (byte) absByte;
         }
         return sample;
     }
 
-    // Dirty hack to fill 0 byte with sample data
+    private byte getAbsByte(byte[] bytes, int from, int to) {
+        int step = (to - from) / 5;
+        float absByte = 0.0F;
+        int count = 0;
+        for (int i = from; i < to; i += step) {
+            absByte += getAbsByte(bytes[i]);
+            ++count;
+        }
+        absByte /= count;
+        if (absByte <= 5.0F) {
+            absByte = getRandomByte();
+        }
+        return (byte) absByte;
+    }
+
+    // Dirty hack to fill invalid byte with random byte
     private float getRandomByte() {
-        return random.nextInt(Byte.MAX_VALUE - 1);
+        return random.nextInt(Byte.MAX_VALUE - 60) + 30;
     }
 
     public void getSampleAsync(@NonNull final byte[] data, final int targetSize,
