@@ -36,6 +36,7 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -48,6 +49,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 public class TideView extends View implements ValueAnimator.AnimatorUpdateListener {
     private static final int DEFAULT_CHUNK_WIDTH_DP = 3;
@@ -334,6 +338,24 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
         setRawData(raw, null);
     }
 
+    public void setMediaUri(@NonNull Uri uri) {
+        sampler.getSamplerThread().execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    InputStream stream = getContext()
+                            .getContentResolver().openInputStream(uri);
+                    byte[] bytes = new byte[stream.available()];
+                    int numberOfBytes = stream.read(bytes);
+                    stream.close();
+                    setRawData(bytes);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -482,8 +504,8 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
 
     public interface OnTideViewChangeListener {
         void onProgressChanged(@NonNull TideView tideView, int progress, boolean fromUser);
-        void onStartTrackingTouch(@NonNull TideView tideView);
-        void onStopTrackingTouch(@NonNull TideView tideView);
+        default void onStartTrackingTouch(@NonNull TideView tideView) { }
+        default void onStopTrackingTouch(@NonNull TideView tideView) { }
     }
 
     public interface OnSamplingListener {
