@@ -26,19 +26,26 @@
 
 buildscript {
     ext {
-        tide_version = "1.0.0-alpha6"
-        tide_version_code = 1
+        // Project versions
+        project_version_code = 1
+        project_version_name = '1.0.0-rc1'
+
+        // App SDK versions
+        compileSdkVersion = 30
+        minSdkVersion = 21
+        targetSdkVersion = 30
+        buildToolsVersion = '30.0.2'
     }
+
     repositories {
         google()
         jcenter()
+        mavenCentral()
     }
-    dependencies {
-        classpath "com.android.tools.build:gradle:4.1.1"
-        classpath "androidx.navigation:navigation-safe-args-gradle-plugin:2.3.2"
 
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.5'
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
+    dependencies {
+        classpath 'com.android.tools.build:gradle:4.1.2'
+        classpath 'androidx.navigation:navigation-safe-args-gradle-plugin:2.3.3'
     }
 }
 
