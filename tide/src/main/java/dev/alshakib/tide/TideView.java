@@ -37,7 +37,10 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -49,12 +52,14 @@ import androidx.annotation.Dimension;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.Px;
+import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Random;
 
 public class TideView extends View implements ValueAnimator.AnimatorUpdateListener {
@@ -260,6 +265,27 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
         if (valueAnimator != null) {
             redrawData(new Canvas(waveBitmap), valueAnimator.getAnimatedFraction());
         }
+    }
+
+    @Nullable
+    @Override
+    protected Parcelable onSaveInstanceState() {
+        Parcelable parcelable = super.onSaveInstanceState();
+        if (parcelable != null) {
+            SavedState savedState = new SavedState(parcelable);
+            savedState.setProgress(getProgress());
+            return savedState;
+        }
+        return super.onSaveInstanceState();
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Parcelable state) {
+        if (state instanceof SavedState) {
+            SavedState savedState = (SavedState) state;
+            setProgress(savedState.getProgress(), false);
+        }
+        super.onRestoreInstanceState(state);
     }
 
     @Nullable
@@ -614,6 +640,76 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
 
     private int dpToPx(@NonNull Context context, @Dimension int value) {
         return (int) (value * context.getResources().getDisplayMetrics().density);
+    }
+
+    private static class SavedState extends BaseSavedState implements Parcelable {
+        private int progress;
+
+        public SavedState(Parcel in) {
+            super(in);
+            progress = in.readInt();
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.N)
+        public SavedState(Parcel in, ClassLoader loader) {
+            super(in, loader);
+            progress = in.readInt();
+        }
+
+        public SavedState(Parcelable superState) {
+            super(superState);
+        }
+
+        @Override
+        public void writeToParcel(Parcel dest, int flags) {
+            dest.writeInt(progress);
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        public static final Creator<SavedState> CREATOR = new Creator<SavedState>() {
+            @Override
+            public SavedState createFromParcel(Parcel in) {
+                return new SavedState(in);
+            }
+
+            @Override
+            public SavedState[] newArray(int size) {
+                return new SavedState[size];
+            }
+        };
+
+        public int getProgress() {
+            return progress;
+        }
+
+        public void setProgress(int progress) {
+            this.progress = progress;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SavedState that = (SavedState) o;
+            return progress == that.progress;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(progress);
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return "SavedState{" +
+                    "progress=" + progress +
+                    '}';
+        }
     }
 
     public interface OnTideViewChangeListener {
