@@ -373,31 +373,53 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     public void setRawData(@NonNull byte[] raw) {
+        post(() -> submitScaledData(getSample(raw, getChunksCount())));
+    }
+
+    public void setMediaUri(@NonNull Uri uri) {
+        post(() -> {
+            try {
+                InputStream stream = getContext()
+                        .getContentResolver().openInputStream(uri);
+                if (stream != null) {
+                    byte[] bytes = new byte[stream.available()];
+                    int numberOfBytes = stream.read(bytes);
+                    stream.close();
+                    submitScaledData(getSample(bytes, getChunksCount()));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public void setMediaUri(@NonNull Uri uri, @NonNull Handler handler) {
+        post(() -> {
+            int chunkCount = getChunksCount();
+            handler.post(() -> {
+                try {
+                    InputStream stream = getContext()
+                            .getContentResolver().openInputStream(uri);
+                    if (stream != null) {
+                        byte[] bytes = new byte[stream.available()];
+                        int numberOfBytes = stream.read(bytes);
+                        stream.close();
+                        submitScaledData(getSample(bytes, chunkCount));
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        });
+    }
+
+    private void submitScaledData(final byte[] data) {
         postDelayed(() -> {
-            setScaledData(getSample(raw, getChunksCount()));
+            setScaledData(data);
             if (getAnimateExpansion()) {
                 animateExpansion();
             }
         }, initialDelay);
-    }
-
-    public void setMediaUri(@NonNull Uri uri) {
-        try {
-            InputStream stream = getContext()
-                    .getContentResolver().openInputStream(uri);
-            if (stream != null) {
-                byte[] bytes = new byte[stream.available()];
-                int numberOfBytes = stream.read(bytes);
-                stream.close();
-                setRawData(bytes);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void setMediaUri(@NonNull Uri uri, @NonNull Handler handler) {
-        handler.post(() -> setMediaUri(uri));
     }
 
     private void startTrackingTouch() {
@@ -458,21 +480,23 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     private void redrawData(Canvas canvas, float factor) {
-        if (this.waveBitmap != null) {
-            safeEraseColor(this.waveBitmap);
-            for (int i = 0; i < this.scaledData.length; ++i) {
-                int chunkHeight = (int) ((float) scaledData[i] / (float) Byte.MAX_VALUE * (chunkMaxHeight / 2.0F));
-                int clampedHeight = Math.max(chunkHeight, chunkMinHeight);
-                float heightDiff = (float) (clampedHeight - chunkMinHeight);
-                int animatedDiff = (int) (heightDiff * factor);
-                RectF rectF = new RectF(chunkSpacing / 2F + i * getChunkStepWidth(),
-                        getCenterY() - chunkMinHeight - animatedDiff,
-                        chunkSpacing / 2F + i * getChunkStepWidth() + chunkWidth,
-                        getCenterY() + chunkMinHeight + animatedDiff);
-                canvas.drawRoundRect(rectF, chunkRadius, chunkRadius, wavePaint);
+        post(() -> {
+            if (this.waveBitmap != null) {
+                safeEraseColor(this.waveBitmap);
+                for (int i = 0; i < this.scaledData.length; ++i) {
+                    int chunkHeight = (int) ((float) scaledData[i] / (float) Byte.MAX_VALUE * (chunkMaxHeight / 2.0F));
+                    int clampedHeight = Math.max(chunkHeight, chunkMinHeight);
+                    float heightDiff = (float) (clampedHeight - chunkMinHeight);
+                    int animatedDiff = (int) (heightDiff * factor);
+                    RectF rectF = new RectF(chunkSpacing / 2F + i * getChunkStepWidth(),
+                            getCenterY() - chunkMinHeight - animatedDiff,
+                            chunkSpacing / 2F + i * getChunkStepWidth() + chunkWidth,
+                            getCenterY() + chunkMinHeight + animatedDiff);
+                    canvas.drawRoundRect(rectF, chunkRadius, chunkRadius, wavePaint);
+                }
+                postInvalidate();
             }
-            postInvalidate();
-        }
+        });
     }
 
     private void redrawData() {
