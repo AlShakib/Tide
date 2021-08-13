@@ -32,7 +32,7 @@
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.tide.TideFragment">
+    tools:context=".ui.fragment.tide.TideFragment">
 
     <androidx.appcompat.widget.AppCompatTextView
         android:id="@+id/from_user_text_view"

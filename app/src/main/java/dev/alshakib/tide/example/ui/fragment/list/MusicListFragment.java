@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-package dev.alshakib.tide.example.ui.list;
+package dev.alshakib.tide.example.ui.fragment.list;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -34,39 +34,30 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import java.util.List;
-
 import dev.alshakib.rvcompat.viewholder.ViewHolderCompat;
 import dev.alshakib.tide.example.R;
-import dev.alshakib.tide.example.adapter.MusicListAdapterCompat;
-import dev.alshakib.tide.example.data.model.Music;
 import dev.alshakib.tide.example.databinding.FragmentMusicListBinding;
 import dev.alshakib.tide.example.extension.AndroidExt;
+import dev.alshakib.tide.example.model.Music;
+import dev.alshakib.tide.example.ui.activity.MainViewModel;
 
 public class MusicListFragment extends Fragment implements ViewHolderCompat.OnItemClickListener {
-    private static final String LOG_TAG = MusicListFragment.class.getSimpleName();
-
     private FragmentMusicListBinding viewBinding;
     private NavController navController;
 
-    private MusicListViewModel musicListViewModel;
-
-    private MusicListAdapterCompat musicListAdapterCompat;
+    private MainViewModel mainViewModel;
 
     public MusicListFragment() { }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        musicListViewModel = new ViewModelProvider(this).get(MusicListViewModel.class);
-        musicListAdapterCompat = new MusicListAdapterCompat();
-        musicListAdapterCompat.setOnItemClickListener(this);
+        mainViewModel = MainViewModel.getInstance(requireActivity());
+        mainViewModel.getListAdapterCompat().setOnItemClickListener(this);
     }
 
     @Override
@@ -82,23 +73,17 @@ public class MusicListFragment extends Fragment implements ViewHolderCompat.OnIt
         navController = NavHostFragment.findNavController(this);
         viewBinding.recyclerView.setHasFixedSize(true);
         viewBinding.recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        viewBinding.recyclerView.setAdapter(musicListAdapterCompat);
-
-        musicListViewModel.getMusicListLiveData().observe(getViewLifecycleOwner(),
-                new Observer<List<Music>>() {
-                    @Override
-                    public void onChanged(List<Music> music) {
-                        musicListAdapterCompat.submitList(music);
-                    }
-                });
+        viewBinding.recyclerView.setAdapter(mainViewModel.getListAdapterCompat());
     }
 
     @Override
     public void onItemClick(@NonNull ViewHolderCompat viewHolderCompat, @NonNull View v, int viewType, int position) {
-        Music music = musicListAdapterCompat.getCurrentList().get(position);
-        if (music != null) {
-            AndroidExt.safeNavigateTo(navController, R.id.nav_music_list,
-                    MusicListFragmentDirections.actionNavMusicListToNavTide(music));
+        if (mainViewModel != null) {
+            Music music = mainViewModel.getListAdapterCompat().getCurrentList().get(position);
+            if (music != null) {
+                AndroidExt.safeNavigateTo(navController, R.id.nav_music_list,
+                        MusicListFragmentDirections.actionNavMusicListToNavTide(music));
+            }
         }
     }
 }

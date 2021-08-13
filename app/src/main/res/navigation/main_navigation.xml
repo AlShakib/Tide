@@ -33,7 +33,7 @@
 
     <fragment
         android:id="@+id/nav_music_list"
-        android:name="dev.alshakib.tide.example.ui.list.MusicListFragment"
+        android:name="dev.alshakib.tide.example.ui.fragment.list.MusicListFragment"
         android:label="@string/title_music_list"
         tools:layout="@layout/fragment_music_list" >
         <action
@@ -43,10 +43,10 @@
     </fragment>
     <fragment
         android:id="@+id/nav_tide"
-        android:name="dev.alshakib.tide.example.ui.tide.TideFragment"
+        android:name="dev.alshakib.tide.example.ui.fragment.tide.TideFragment"
         tools:layout="@layout/fragment_tide" >
         <argument
             android:name="Music"
-            app:argType="dev.alshakib.tide.example.data.model.Music" />
+            app:argType="dev.alshakib.tide.example.model.Music" />
     </fragment>
 </navigation>

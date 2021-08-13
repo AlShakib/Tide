@@ -33,14 +33,13 @@ import androidx.recyclerview.widget.AsyncDifferConfig;
 
 import dev.alshakib.rvcompat.adapter.ListAdapterCompat;
 import dev.alshakib.tide.example.R;
-import dev.alshakib.tide.example.adapter.diff.MusicDiffUtilItemCallback;
 import dev.alshakib.tide.example.adapter.viewholder.MusicViewHolderCompat;
-import dev.alshakib.tide.example.data.model.Music;
+import dev.alshakib.tide.example.model.Music;
 
 public class MusicListAdapterCompat extends ListAdapterCompat<Music, MusicViewHolderCompat> {
 
     public MusicListAdapterCompat() {
-        super(new AsyncDifferConfig.Builder<>(new MusicDiffUtilItemCallback()).build());
+        super(new AsyncDifferConfig.Builder<>(new Music.DiffItemCallback()).build());
     }
 
     @NonNull
@@ -51,8 +50,6 @@ public class MusicListAdapterCompat extends ListAdapterCompat<Music, MusicViewHo
 
     @Override
     public void onBindViewHolderCompat(@NonNull MusicViewHolderCompat holder, int position) {
-        if (getItem(position) != null) {
-            holder.getViewBinding().textView.setText(getItem(position).getTitle());
-        }
+        holder.bind(getItem(position));
     }
 }

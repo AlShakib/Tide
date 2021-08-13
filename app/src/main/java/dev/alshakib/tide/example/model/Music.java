@@ -24,13 +24,15 @@
  * SOFTWARE.
  */
 
-package dev.alshakib.tide.example.data.model;
+package dev.alshakib.tide.example.model;
 
+import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
 
 import java.util.Objects;
 
@@ -40,28 +42,18 @@ public class Music implements Parcelable {
     private String title;
     private String album;
     private String artist;
-    private String path;
+    private Uri mediaUri;
     private long duration;
     private int size;
 
     public Music() { }
-
-    public Music(int id, String title, String album, String artist, String path, long duration, int size) {
-        this.id = id;
-        this.title = title;
-        this.album = album;
-        this.artist = artist;
-        this.path = path;
-        this.duration = duration;
-        this.size = size;
-    }
 
     protected Music(Parcel in) {
         id = in.readInt();
         title = in.readString();
         album = in.readString();
         artist = in.readString();
-        path = in.readString();
+        mediaUri = in.readParcelable(Uri.class.getClassLoader());
         duration = in.readLong();
         size = in.readInt();
     }
@@ -72,7 +64,7 @@ public class Music implements Parcelable {
         dest.writeString(title);
         dest.writeString(album);
         dest.writeString(artist);
-        dest.writeString(path);
+        dest.writeParcelable(mediaUri, flags);
         dest.writeLong(duration);
         dest.writeInt(size);
     }
@@ -126,12 +118,12 @@ public class Music implements Parcelable {
         this.artist = artist;
     }
 
-    public String getPath() {
-        return path;
+    public Uri getMediaUri() {
+        return mediaUri;
     }
 
-    public void setPath(String path) {
-        this.path = path;
+    public void setMediaUri(Uri mediaUri) {
+        this.mediaUri = mediaUri;
     }
 
     public long getDuration() {
@@ -161,12 +153,12 @@ public class Music implements Parcelable {
                 Objects.equals(title, music.title) &&
                 Objects.equals(album, music.album) &&
                 Objects.equals(artist, music.artist) &&
-                Objects.equals(path, music.path);
+                Objects.equals(mediaUri, music.mediaUri);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, title, album, artist, path, duration, size);
+        return Objects.hash(id, title, album, artist, mediaUri, duration, size);
     }
 
     @NonNull
@@ -177,9 +169,22 @@ public class Music implements Parcelable {
                 ", title='" + title + '\'' +
                 ", album='" + album + '\'' +
                 ", artist='" + artist + '\'' +
-                ", path='" + path + '\'' +
+                ", mediaUri='" + mediaUri + '\'' +
                 ", duration=" + duration +
                 ", size=" + size +
                 '}';
+    }
+
+    public static class DiffItemCallback extends DiffUtil.ItemCallback<Music> {
+
+        @Override
+        public boolean areItemsTheSame(@NonNull Music oldItem, @NonNull Music newItem) {
+            return oldItem.getId() == newItem.getId();
+        }
+
+        @Override
+        public boolean areContentsTheSame(@NonNull Music oldItem, @NonNull Music newItem) {
+            return oldItem.equals(newItem);
+        }
     }
 }

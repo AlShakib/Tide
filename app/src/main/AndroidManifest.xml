@@ -41,8 +41,9 @@
         android:theme="@style/Theme.Tide"
         tools:ignore="AllowBackup">
         <activity
-            android:name=".MainActivity"
-            android:theme="@style/Theme.Tide.NoActionBar">
+            android:name=".ui.activity.MainActivity"
+            android:theme="@style/Theme.Tide.NoActionBar"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

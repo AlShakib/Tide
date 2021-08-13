@@ -24,10 +24,9 @@
  * SOFTWARE.
  */
 
-package dev.alshakib.tide.example.ui.tide;
+package dev.alshakib.tide.example.ui.fragment.tide;
 
 import android.annotation.SuppressLint;
-import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,13 +38,13 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import dev.alshakib.tide.TideView;
-import dev.alshakib.tide.example.data.model.Music;
 import dev.alshakib.tide.example.databinding.FragmentTideBinding;
 import dev.alshakib.tide.example.extension.AndroidExt;
+import dev.alshakib.tide.example.model.Music;
+import dev.alshakib.tide.example.ui.activity.MainViewModel;
 
 public class TideFragment extends Fragment
         implements TideView.OnTideViewChangeListener, SeekBar.OnSeekBarChangeListener {
-    private static final String LOG_TAG = TideFragment.class.getSimpleName();
 
     private FragmentTideBinding viewBinding;
 
@@ -56,9 +55,7 @@ public class TideFragment extends Fragment
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            music = TideFragmentArgs.fromBundle(getArguments()).getMusic();
-        }
+        music = TideFragmentArgs.fromBundle(requireArguments()).getMusic();
     }
 
     @Override
@@ -67,7 +64,8 @@ public class TideFragment extends Fragment
         AndroidExt.setActionBarTitle(requireActivity(), music.getTitle());
         viewBinding = FragmentTideBinding.inflate(inflater, container, false);
         viewBinding.tideView.setOnTideViewChangeListener(this);
-        viewBinding.tideView.setMediaUri(Uri.parse(music.getPath()));
+        MainViewModel mainViewModel = MainViewModel.getInstance(requireActivity());
+        viewBinding.tideView.setMediaUri(music.getMediaUri(), mainViewModel.getHandler());
         viewBinding.tideView.setMaxProgress(1000);
         viewBinding.progress.setText(String.valueOf(viewBinding.tideView.getProgress()));
         viewBinding.progressMax.setText(String.valueOf(viewBinding.tideView.getMaxProgress()));

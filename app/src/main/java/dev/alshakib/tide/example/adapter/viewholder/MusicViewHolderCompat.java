@@ -32,6 +32,7 @@ import androidx.annotation.NonNull;
 
 import dev.alshakib.rvcompat.viewholder.ViewHolderCompat;
 import dev.alshakib.tide.example.databinding.MusicViewHolderBinding;
+import dev.alshakib.tide.example.model.Music;
 
 public class MusicViewHolderCompat extends ViewHolderCompat {
 
@@ -41,6 +42,12 @@ public class MusicViewHolderCompat extends ViewHolderCompat {
         super(itemView);
         this.viewBinding = MusicViewHolderBinding.bind(itemView);
         viewBinding.getRoot().setOnClickListener(this);
+    }
+
+    public void bind(@NonNull Music music) {
+        viewBinding.titleTextView.setText(music.getTitle());
+        viewBinding.subtitleTextView.setText(music.getArtist());
+        viewBinding.descriptionTextView.setText(music.getAlbum());
     }
 
     public MusicViewHolderBinding getViewBinding() {
