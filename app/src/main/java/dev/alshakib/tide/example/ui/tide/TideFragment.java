@@ -26,6 +26,7 @@
 
 package dev.alshakib.tide.example.ui.tide;
 
+import android.annotation.SuppressLint;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -38,7 +39,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import dev.alshakib.tide.TideView;
-import dev.alshakib.tide.example.R;
 import dev.alshakib.tide.example.data.model.Music;
 import dev.alshakib.tide.example.databinding.FragmentTideBinding;
 import dev.alshakib.tide.example.extension.AndroidExt;
@@ -69,8 +69,7 @@ public class TideFragment extends Fragment
         viewBinding.tideView.setOnTideViewChangeListener(this);
         viewBinding.tideView.setMediaUri(Uri.parse(music.getPath()));
         viewBinding.tideView.setMaxProgress(1000);
-        viewBinding.progressMax.setText(requireContext()
-                .getString(R.string.text_max_progress, viewBinding.tideView.getMaxProgress()));
+        viewBinding.progressMax.setText(String.valueOf(viewBinding.tideView.getMaxProgress()));
         viewBinding.seekBar.setOnSeekBarChangeListener(this);
         viewBinding.seekBar.setMax(viewBinding.tideView.getMaxProgress());
         return viewBinding.getRoot();
@@ -82,22 +81,44 @@ public class TideFragment extends Fragment
 
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     public void onProgressChanged(@NonNull TideView tideView, int progress, boolean fromUser) {
-        viewBinding.progress.setText(requireContext().getString(R.string.text_progress, progress));
-        viewBinding.seekBar.setProgress(progress);
+        viewBinding.progress.setText(String.valueOf(progress));
+        if (fromUser) {
+            viewBinding.fromUserTextView.setText("Progress is from user.");
+            viewBinding.seekBar.setProgress(progress);
+        } else {
+            viewBinding.fromUserTextView.setText("Progress is not from user.");
+        }
     }
 
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        viewBinding.tideView.setProgress(progress);
+        if (fromUser) {
+            viewBinding.tideView.setProgress(progress);
+        }
     }
 
+    @SuppressLint("SetTextI18n")
+    @Override
+    public void onStartTrackingTouch(@NonNull TideView tideView) {
+        viewBinding.trackingStatusTextView.setText("Tracking Touch: Start");
+    }
+
+    @SuppressLint("SetTextI18n")
+    @Override
+    public void onStopTrackingTouch(@NonNull TideView tideView) {
+        viewBinding.trackingStatusTextView.setText("Tracking Touch: Stop");
+    }
+
+    @SuppressLint("SetTextI18n")
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
 
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
 

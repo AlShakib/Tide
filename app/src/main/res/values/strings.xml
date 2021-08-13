@@ -27,6 +27,4 @@
 <resources>
     <string name="app_name">Tide</string>
     <string name="title_music_list">Music List</string>
-    <string name="text_progress">Progress: %d</string>
-    <string name="text_max_progress">Max: %d</string>
 </resources>

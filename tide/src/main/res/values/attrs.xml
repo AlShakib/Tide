@@ -27,7 +27,7 @@
 
 <resources>
     <declare-styleable name="TideView">
-        <attr name="tidePrimaryColor" format="color"/>
+        <attr name="tideChunkColor" format="color"/>
         <attr name="tideChunkWidth" format="dimension"/>
         <attr name="tideChunkMaxHeight" format="dimension"/>
         <attr name="tideChunkMinHeight" format="dimension"/>
@@ -37,6 +37,6 @@
         <attr name="tideProgress" format="integer"/>
         <attr name="tideAnimateExpansionDuration" format="integer"/>
         <attr name="tideAnimateExpansion" format="boolean"/>
-        <attr name="tideAsSeekBar" format="boolean"/>
+        <attr name="tideSeekBar" format="boolean"/>
     </declare-styleable>
 </resources>
