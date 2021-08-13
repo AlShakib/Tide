@@ -69,6 +69,7 @@ public class TideFragment extends Fragment
         viewBinding.tideView.setOnTideViewChangeListener(this);
         viewBinding.tideView.setMediaUri(Uri.parse(music.getPath()));
         viewBinding.tideView.setMaxProgress(1000);
+        viewBinding.progress.setText(String.valueOf(viewBinding.tideView.getProgress()));
         viewBinding.progressMax.setText(String.valueOf(viewBinding.tideView.getMaxProgress()));
         viewBinding.seekBar.setOnSeekBarChangeListener(this);
         viewBinding.seekBar.setMax(viewBinding.tideView.getMaxProgress());
