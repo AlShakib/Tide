@@ -34,25 +34,22 @@ buildscript {
         compileSdkVersion = 30
         minSdkVersion = 21
         targetSdkVersion = 30
-        buildToolsVersion = '30.0.2'
     }
 
     repositories {
         google()
-        jcenter()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.2'
-        classpath 'androidx.navigation:navigation-safe-args-gradle-plugin:2.3.3'
+        classpath 'com.android.tools.build:gradle:7.0.0'
+        classpath 'androidx.navigation:navigation-safe-args-gradle-plugin:2.3.5'
     }
 }
 
 allprojects {
     repositories {
         google()
-        jcenter()
         mavenCentral()
     }
 }

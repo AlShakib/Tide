@@ -94,7 +94,7 @@ public class MusicListFragment extends Fragment implements ViewHolderCompat.OnIt
     }
 
     @Override
-    public void onItemClick(@NonNull View v, int viewType, int position) {
+    public void onItemClick(@NonNull ViewHolderCompat viewHolderCompat, @NonNull View v, int viewType, int position) {
         Music music = musicListAdapterCompat.getCurrentList().get(position);
         if (music != null) {
             AndroidExt.safeNavigateTo(navController, R.id.nav_music_list,
