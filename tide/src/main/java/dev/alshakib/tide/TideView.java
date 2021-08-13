@@ -102,6 +102,7 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     private long initialDelay;
 
     private byte[] scaledData;
+    private byte[] rawData;
 
     private ValueAnimator expansionAnimator;
     private Paint wavePaint;
@@ -403,7 +404,12 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     public void setRawData(@NonNull byte[] raw) {
-        post(() -> submitScaledData(getSample(raw, getChunksCount())));
+        post(() -> {
+            if (this.rawData == null || !Arrays.equals(this.rawData, raw)) {
+                this.rawData = raw;
+                submitScaledData(getSample(raw, getChunksCount()));
+            }
+        });
     }
 
     public void setMediaUri(@NonNull Uri uri) {
@@ -413,9 +419,12 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
                         .getContentResolver().openInputStream(uri);
                 if (stream != null) {
                     byte[] bytes = new byte[stream.available()];
-                    int numberOfBytes = stream.read(bytes);
+                    stream.read(bytes);
                     stream.close();
-                    submitScaledData(getSample(bytes, getChunksCount()));
+                    if (this.rawData == null || !Arrays.equals(this.rawData, bytes)) {
+                        this.rawData = bytes;
+                        submitScaledData(getSample(bytes, getChunksCount()));
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -432,9 +441,12 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
                             .getContentResolver().openInputStream(uri);
                     if (stream != null) {
                         byte[] bytes = new byte[stream.available()];
-                        int numberOfBytes = stream.read(bytes);
+                        stream.read(bytes);
                         stream.close();
-                        submitScaledData(getSample(bytes, chunkCount));
+                        if (this.rawData == null || !Arrays.equals(this.rawData, bytes)) {
+                            this.rawData = bytes;
+                            submitScaledData(getSample(bytes, chunkCount));
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -483,11 +495,8 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     private void setScaledData(@NonNull byte[] bytes) {
-        byte[] tempData = bytes.length <= getChunksCount() ? paste(new byte[this.getChunksCount()], bytes) : bytes;
-        if (!Arrays.equals(scaledData, tempData)) {
-            scaledData = bytes.length <= getChunksCount() ? paste(new byte[this.getChunksCount()], bytes) : bytes;
-            redrawData();
-        }
+        scaledData = bytes.length <= getChunksCount() ? paste(new byte[this.getChunksCount()], bytes) : bytes;
+        redrawData();
     }
 
     private int toProgress(@NonNull MotionEvent motionEvent) {
