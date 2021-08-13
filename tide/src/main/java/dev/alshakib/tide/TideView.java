@@ -213,18 +213,18 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
         }
         switch(event.getAction()) {
             case MotionEvent.ACTION_DOWN: {
-                isActionMoved = false;
                 isDragging = false;
+                isActionMoved = false;
                 isTrackingTouch = false;
                 downTouchX = event.getX();
                 downTouchY = event.getY();
                 return true;
             }
             case MotionEvent.ACTION_UP: {
+                isDragging = false;
                 if (!isActionMoved) {
                     startTrackingTouch();
                     setProgress(toProgress(event), true);
-                    isDragging = false;
                     stopTrackingTouch();
                     return true;
                 }
@@ -240,9 +240,9 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
                 float deltaX = Math.abs(downTouchX - event.getX());
                 float deltaY = Math.abs(downTouchY - event.getY());
                 if (deltaX > deltaY) {
+                    isDragging = true;
                     startTrackingTouch();
                     setProgress(toProgress(event), true);
-                    isDragging = true;
                     return true;
                 }
                 isActionMoved = true;
@@ -392,6 +392,10 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
 
     public void setSeekBar(boolean seekBar) {
         isSeekBar = seekBar;
+    }
+
+    public boolean isDragging() {
+        return isDragging;
     }
 
     public int getChunksCount() {
