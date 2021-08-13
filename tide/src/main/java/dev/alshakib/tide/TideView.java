@@ -439,12 +439,17 @@ public class TideView extends View implements ValueAnimator.AnimatorUpdateListen
     }
 
     private int toProgress(@NonNull MotionEvent motionEvent) {
-        return (int) (Math.min(motionEvent.getX(), Math.max(getWidth(), 0.0)) / getWidth() * maxProgress);
+        return (int) (Math.min(motionEvent.getX(), Math.max(getWidth(), 0)) / getWidth() * maxProgress);
     }
 
     private void setProgress(int progress, boolean fromUser) {
-        if (progress >= 0 && progress <= maxProgress) {
-            this.progress = Math.abs(progress);
+        if (progress < 0) {
+            progress = 0;
+        } else if (progress > maxProgress) {
+            progress = maxProgress;
+        }
+        if (this.progress != progress) {
+            this.progress = progress;
             postInvalidate();
             if (onTideViewChangeListener != null) {
                 onTideViewChangeListener.onProgressChanged(this, this.progress, fromUser);
