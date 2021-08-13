@@ -24,6 +24,21 @@
  * SOFTWARE.
  */
 
+/*
+ * [1] Export gpg secret key with,
+ *   $ gpg --export-secret-keys <GPG_KEY_ID> > /path/to/secret.key
+ *
+ * [2] Add these config to the local.properties file
+ *    signing.keyId=<GPG_KEY_ID>
+ *    signing.password=<GPG_PASSWORD>
+ *    signing.secretKeyRingFile=/path/to/secret.key
+ *    ossrhUsername=<OSS_USERNAME>
+ *    ossrhPassword=<OSS_PASSWORD>
+ *
+ * [3] Now publish to maven central,
+ *    ./gradlew clean build tide:publishReleasePublicationToSonatypeRepository
+ */
+
 ext {
     // Developer information
     DEVELOPER_ID = 'AlShakib'
